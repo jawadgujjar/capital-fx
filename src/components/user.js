@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Modal, List, Image } from 'antd';
+import { Table, Button, Space, Modal, List, Image, Tabs, Input, Select, Form } from 'antd';
 import './user.css'; // Ensure the custom CSS is imported
+
+const { TabPane } = Tabs;
 
 const User = () => {
   // Sample data for the table
@@ -10,58 +12,31 @@ const User = () => {
       userName: 'John Doe',
       email: 'john@example.com',
       phone: '+1234567890',
-      funds: 5000, // User funds
-      transactions: [ // Sample transactions for the user
+      funds: 5000,
+      demoAccountTransactions: [ // Demo Account transactions
         { type: 'Deposit', amount: 2000, date: '2025-03-20' },
         { type: 'Withdraw', amount: 500, date: '2025-03-19' },
+      ],
+      liveAccountTransactions: [ // Live Account transactions
         { type: 'Deposit', amount: 1000, date: '2025-03-18' },
+        { type: 'Withdraw', amount: 300, date: '2025-03-17' },
       ],
       kyc: {
         cnicFront: 'path_to_cnic_front_image.jpg',
         cnicBack: 'path_to_cnic_back_image.jpg',
-        utilityBill: 'path_to_utility_bill_image.jpg'
-      }
+        utilityBill: 'path_to_utility_bill_image.jpg',
+      },
     },
-    {
-      key: '2',
-      userName: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+0987654321',
-      funds: 3000,
-      transactions: [
-        { type: 'Deposit', amount: 1500, date: '2025-03-21' },
-        { type: 'Withdraw', amount: 200, date: '2025-03-19' },
-      ],
-      kyc: {
-        cnicFront: null,  // No CNIC Front image for this user
-        cnicBack: 'path_to_cnic_back_image.jpg',
-        utilityBill: null  // No utility bill image for this user
-      }
-    },
-    {
-      key: '3',
-      userName: 'Mark Wilson',
-      email: 'mark@example.com',
-      phone: '+1122334455',
-      funds: 10000,
-      transactions: [
-        { type: 'Deposit', amount: 5000, date: '2025-03-20' },
-        { type: 'Withdraw', amount: 1000, date: '2025-03-18' },
-      ],
-      kyc: {
-        cnicFront: 'path_to_cnic_front_image.jpg',
-        cnicBack: 'path_to_cnic_back_image.jpg',
-        utilityBill: 'path_to_utility_bill_image.jpg'
-      }
-    }
+    // More user data...
   ];
 
-  // State for managing modal visibility and selected user data
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isKycModalVisible, setIsKycModalVisible] = useState(false);
+  const [transactionType, setTransactionType] = useState('deposit');
+  const [accountType, setAccountType] = useState('demo'); // 'demo' or 'live'
+  const [amount, setAmount] = useState(0);
 
-  // Columns for the Ant Design table
   const columns = [
     {
       title: 'User Name',
@@ -101,32 +76,54 @@ const User = () => {
     },
   ];
 
-  // Function to handle viewing user (opens the modal and sets user data)
   const viewUser = (record) => {
-    setSelectedUser(record); // Set the selected user data
-    setIsModalVisible(true);  // Show the modal
+    setSelectedUser(record);
+    setIsModalVisible(true);
   };
 
-  // Function to handle viewing KYC verification
   const viewKYC = (record) => {
-    setSelectedUser(record); // Set the selected user data
-    setIsKycModalVisible(true);  // Show the KYC modal
+    setSelectedUser(record);
+    setIsKycModalVisible(true);
   };
 
-  // Function to handle closing the modals
   const handleCancel = () => {
-    setIsModalVisible(false); // Close the user modal
-    setIsKycModalVisible(false); // Close the KYC modal
-    setSelectedUser(null); // Reset the selected user data
+    setIsModalVisible(false);
+    setIsKycModalVisible(false);
+    setSelectedUser(null);
+    setAmount(0);
   };
 
-  // Function to handle deleting user
   const deleteUser = (key) => {
     const confirmed = window.confirm('Are you sure you want to delete this user?');
     if (confirmed) {
       alert(`User with key ${key} has been deleted.`);
-      // Add logic to delete the user (e.g., remove from state or API call)
     }
+  };
+
+  const handleTransaction = () => {
+    if (amount <= 0) {
+      alert('Amount must be greater than zero!');
+      return;
+    }
+
+    const newTransaction = {
+      type: transactionType.charAt(0).toUpperCase() + transactionType.slice(1), // Capitalizing the first letter
+      amount: amount,
+      date: new Date().toLocaleDateString(),
+    };
+
+    if (accountType === 'demo') {
+      selectedUser.demoAccountTransactions.push(newTransaction);
+    } else {
+      selectedUser.liveAccountTransactions.push(newTransaction);
+    }
+
+    // Update the user state to trigger re-render
+    setSelectedUser({ ...selectedUser });
+
+    // Close the modal and reset form
+    setAmount(0);
+    setIsModalVisible(false);
   };
 
   return (
@@ -146,10 +143,11 @@ const User = () => {
         visible={isModalVisible}
         onCancel={handleCancel}
         footer={null}
-        width={700}
+        width={900}
       >
         {selectedUser && (
           <div className="modal-content">
+            {/* User Info */}
             <div className="user-info">
               <p><strong>Name:</strong> {selectedUser.userName}</p>
               <p><strong>Email:</strong> {selectedUser.email}</p>
@@ -157,19 +155,74 @@ const User = () => {
               <p><strong>Funds Balance:</strong> ${selectedUser.funds}</p>
             </div>
 
-            <div className="transaction-section">
-              <h3>Transactions</h3>
-              <List
-                dataSource={selectedUser.transactions}
-                renderItem={(transaction) => (
-                  <List.Item>
-                    <div>
-                      <strong>{transaction.type}:</strong> ${transaction.amount} on {transaction.date}
-                    </div>
-                  </List.Item>
-                )}
-              />
+            {/* Deposit/Withdraw Form */}
+            <div className="transaction-form">
+              <Form layout="inline">
+                <Form.Item label="Amount">
+                  <Input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Enter amount"
+                  />
+                </Form.Item>
+                <Form.Item label="Account Type">
+                  <Select
+                    value={accountType}
+                    onChange={(value) => setAccountType(value)}
+                    style={{ width: 120 }}
+                  >
+                    <Select.Option value="demo">Demo Account</Select.Option>
+                    <Select.Option value="live">Live Account</Select.Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item label="Transaction Type">
+                  <Select
+                    value={transactionType}
+                    onChange={(value) => setTransactionType(value)}
+                    style={{ width: 120 }}
+                  >
+                    <Select.Option value="deposit">Deposit</Select.Option>
+                    <Select.Option value="withdraw">Withdraw</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Form>
+
+              <Button type="primary" onClick={handleTransaction} style={{ marginTop: 10 }}>
+                Execute Transaction
+              </Button>
             </div>
+
+            {/* Tabs for demo and live account transactions */}
+            <Tabs defaultActiveKey="1" style={{ marginTop: '20px' }}>
+              <TabPane tab="Demo Account" key="1">
+                <h3>Transaction History</h3>
+                <List
+                  dataSource={selectedUser.demoAccountTransactions}
+                  renderItem={(transaction) => (
+                    <List.Item>
+                      <div>
+                        <strong>{transaction.type}:</strong> ${transaction.amount} on {transaction.date}
+                      </div>
+                    </List.Item>
+                  )}
+                />
+              </TabPane>
+
+              <TabPane tab="Live Account" key="2">
+                <h3>Transaction History</h3>
+                <List
+                  dataSource={selectedUser.liveAccountTransactions}
+                  renderItem={(transaction) => (
+                    <List.Item>
+                      <div>
+                        <strong>{transaction.type}:</strong> ${transaction.amount} on {transaction.date}
+                      </div>
+                    </List.Item>
+                  )}
+                />
+              </TabPane>
+            </Tabs>
           </div>
         )}
       </Modal>
