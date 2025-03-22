@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Card, Col, Row, Statistic } from "antd";
 import {
-  LineChartOutlined,
-  ShoppingCartOutlined,
-  DollarCircleOutlined,
+  UserAddOutlined,
+  BankOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
 } from "@ant-design/icons";
 import { Fade } from "react-awesome-reveal";
 import {
@@ -21,44 +22,56 @@ import "./dashboard.css";
 const Dashboard = () => {
   // Mocked data instead of fetching from API
   const [dashboardData, setDashboardData] = useState({
-    totalProducts: 500, // Mock value for products
-    totalHangtags: 200, // Mock value for hangtags
+    totalUsers: 1200, // Mock value for users
+    totalDeposit: 55000, // Mock value for total deposit
+    totalWithdraw: 32000, // Mock value for total withdraw
+    totalFunds: 23000, // Mock value for total funds
   });
 
   useEffect(() => {
     // Simulate data update
     const fetchDashboardData = async () => {
       // Mocking the API data for this example
-      const totalHangtags = 200;
-      const totalProducts = 500;
+      const totalUsers = 1200;
+      const totalDeposit = 55000;
+      const totalWithdraw = 32000;
+      const totalFunds = 23000;
 
-      setDashboardData({ totalHangtags, totalProducts });
-      localStorage.setItem("totalhangtags", totalHangtags);
-      localStorage.setItem("totalproducts", totalProducts);
+      setDashboardData({ totalUsers, totalDeposit, totalWithdraw, totalFunds });
+      localStorage.setItem("totalUsers", totalUsers);
+      localStorage.setItem("totalDeposit", totalDeposit);
+      localStorage.setItem("totalWithdraw", totalWithdraw);
+      localStorage.setItem("totalFunds", totalFunds);
     };
 
     fetchDashboardData();
   }, []);
 
-  const { totalProducts, totalHangtags } = dashboardData;
+  const { totalUsers, totalDeposit, totalWithdraw, totalFunds } = dashboardData;
 
   const data = [
     {
-      title: "Total Orders",
-      number: 650,
-      icon: <ShoppingCartOutlined />,
-      color: "#FF5722",
+      title: "Total Users",
+      number: totalUsers,
+      icon: <UserAddOutlined />,
+      color: "#FF9800",
     },
     {
-      title: "Products",
-      number: totalProducts + totalHangtags, // Add the numeric values
-      icon: <LineChartOutlined />,
-      color: "#3F51B5",
+      title: "Total Deposit",
+      number: totalDeposit,
+      icon: <BankOutlined />,
+      color: "#4CAF50",
     },
     {
-      title: "Total Sales",
-      number: 10370, // Update to a number without "$" for calculations
-      icon: <DollarCircleOutlined />,
+      title: "Total Withdraw",
+      number: totalWithdraw,
+      icon: <ArrowUpOutlined />,
+      color: "#2196F3",
+    },
+    {
+      title: "Total Funds",
+      number: totalFunds,
+      icon: <ArrowDownOutlined />,
       color: "#9C27B0",
     },
   ];
@@ -75,10 +88,7 @@ const Dashboard = () => {
   // Bar Chart Data from Cards
   const chartData = data.map((item) => ({
     name: item.title,
-    value:
-      item.title === "Total Sales"
-        ? item.number / 1000 // Divide by 1000 for scaling, if needed
-        : item.number,
+    value: item.number,
   }));
 
   // Get maximum value for scaling
@@ -105,10 +115,10 @@ const Dashboard = () => {
                 <h3 className="dashboard-card-title">{item.title}</h3>
                 <Statistic
                   value={
-                    item.title === "Total Sales"
-                      ? formatCurrency(item.number)
+                    item.title === "Total Deposit" || item.title === "Total Funds"
+                      ? formatCurrency(item.number) // Format the value if it's financial data
                       : item.number
-                  } // Format the value if it's Total Sales
+                  }
                   valueStyle={{
                     fontSize: "24px",
                     fontWeight: "bold",
@@ -121,7 +131,8 @@ const Dashboard = () => {
         ))}
       </Row>
 
-      {/* Chart Section */}
+      {/* Chart Section (Optional) */}
+      {/* If you still want to include the chart */}
       <div className="dashboard-chart" style={{ textAlign: "center" }}>
         <h2>Analytics Overview</h2>
         <ResponsiveContainer width="80%" height={300}>

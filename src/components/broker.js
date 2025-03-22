@@ -4,6 +4,8 @@ import { Input, Button, Modal, Form } from 'antd'; // Import Ant Design componen
 
 function Broker() {
   const [bankDetails, setBankDetails] = useState({
+    bankName: '',
+    accountHolderName: '',
     accountNumber: '',
     ibanNumber: '',
   });
@@ -42,6 +44,24 @@ function Broker() {
       {/* Bank Details Form */}
       <div className="bank-details-form">
         <Form layout="vertical">
+          <Form.Item label="Bank Name">
+            <Input
+              name="bankName"
+              value={bankDetails.bankName}
+              onChange={handleInputChange}
+              placeholder="Enter your bank name"
+            />
+          </Form.Item>
+
+          <Form.Item label="Account Holder Name">
+            <Input
+              name="accountHolderName"
+              value={bankDetails.accountHolderName}
+              onChange={handleInputChange}
+              placeholder="Enter account holder's name"
+            />
+          </Form.Item>
+
           <Form.Item label="Bank Account Number">
             <Input
               name="accountNumber"
@@ -79,6 +99,8 @@ function Broker() {
         width={600}
       >
         <div className="modal-content">
+          <p><strong>Bank Name:</strong> {bankDetails.bankName}</p>
+          <p><strong>Account Holder Name:</strong> {bankDetails.accountHolderName}</p>
           <p><strong>Bank Account Number:</strong> {bankDetails.accountNumber}</p>
           <p><strong>IBAN Number:</strong> {bankDetails.ibanNumber}</p>
         </div>

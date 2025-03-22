@@ -52,14 +52,6 @@ const AdminPortal = () => {
               {item}
             </a>
           ))}
-
-          {/* Settings Link */}
-          <a
-            className={activeContent === "Settings" ? "active" : ""}
-            onClick={() => setActiveContent("Settings")}
-          >
-            Settings
-          </a>
         </nav>
 
         {/* Logout Button at the bottom */}

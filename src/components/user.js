@@ -1,129 +1,225 @@
-import React, { useState } from 'react';
-import { Table, Button, Space, Modal, List, Image, Tabs, Input, Select, Form } from 'antd';
-import './user.css'; // Ensure the custom CSS is imported
+import React, { useState } from "react";
+import {
+  Table,
+  Button,
+  Modal,
+  List,
+  notification,
+  Input,
+  Radio,
+  Image,
+  Tabs,
+} from "antd";
+import "./user.css"; // Ensure custom CSS is applied
 
-const { TabPane } = Tabs;
+const { Tab } = Tabs;
 
 const User = () => {
-  // Sample data for the table
   const data = [
     {
-      key: '1',
-      userName: 'John Doe',
-      email: 'john@example.com',
-      phone: '+1234567890',
+      key: "1",
+      userName: "John Doe",
+      email: "john@example.com",
+      phone: "+1234567890",
       funds: 5000,
-      demoAccountTransactions: [ // Demo Account transactions
-        { type: 'Deposit', amount: 2000, date: '2025-03-20' },
-        { type: 'Withdraw', amount: 500, date: '2025-03-19' },
+      accountType: "demo", // demo/live account type
+      accountRequestStatus: "pending", // pending/accepted
+      demoAccountTransactions: [
+        { type: "Deposit", amount: 2000, date: "2025-03-20" },
+        { type: "Withdraw", amount: 500, date: "2025-03-19" },
       ],
-      liveAccountTransactions: [ // Live Account transactions
-        { type: 'Deposit', amount: 1000, date: '2025-03-18' },
-        { type: 'Withdraw', amount: 300, date: '2025-03-17' },
+      liveAccountTransactions: [
+        { type: "Deposit", amount: 1000, date: "2025-03-18" },
+        { type: "Withdraw", amount: 300, date: "2025-03-17" },
       ],
       kyc: {
-        cnicFront: 'path_to_cnic_front_image.jpg',
-        cnicBack: 'path_to_cnic_back_image.jpg',
-        utilityBill: 'path_to_utility_bill_image.jpg',
+        cnicFront: "path_to_cnic_front_image.jpg",
+        cnicBack: "path_to_cnic_back_image.jpg",
+        bankDetails: {
+          accountNumber: "123456789",
+          ibanNumber: "GB29XABC10161234567801",
+          holderName: "John Doe",
+          bankName: "Bank of Example",
+        },
+        isVerified: false,
       },
     },
     // More user data...
   ];
 
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+  const [imagePreviewSrc, setImagePreviewSrc] = useState("");
   const [isKycModalVisible, setIsKycModalVisible] = useState(false);
-  const [transactionType, setTransactionType] = useState('deposit');
-  const [accountType, setAccountType] = useState('demo'); // 'demo' or 'live'
-  const [amount, setAmount] = useState(0);
+  const [isFundsModalVisible, setIsFundsModalVisible] = useState(false);
+  const [isAccountRequestModalVisible, setIsAccountRequestModalVisible] =
+    useState(false);
+  const [isSendDetailsModalVisible, setIsSendDetailsModalVisible] =
+    useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [accountRequests, setAccountRequests] = useState([]);
+  const [acceptedUsers, setAcceptedUsers] = useState([]);
+  const [newDeposits, setNewDeposits] = useState([]); // State for newly added deposits
+
+  const [email, setEmail] = useState(""); // State for email input
+  const [password, setPassword] = useState(""); // State for password input
+  const [accountType, setAccountType] = useState("demo"); // State for account type (live/demo)
 
   const columns = [
     {
-      title: 'User Name',
-      dataIndex: 'userName',
-      key: 'userName',
-      width: '30%',
+      title: "Name",
+      dataIndex: "userName",
+      key: "userName",
+      className: "custom-table-column",
     },
     {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
-      width: '35%',
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      className: "custom-table-column",
     },
     {
-      title: 'Phone Number',
-      dataIndex: 'phone',
-      key: 'phone',
-      width: '20%',
-    },
-    {
-      title: 'Action',
-      key: 'action',
+      title: "Action",
+      key: "action",
       render: (_, record) => (
-        <Space size="middle">
-          <Button type="primary" onClick={() => viewUser(record)}>
-            View User
+        <div className="custom-action-buttons">
+          <Button className="view-kyc-button" onClick={() => viewKYC(record)}>
+            KYC
           </Button>
-          <Button type="danger" onClick={() => deleteUser(record.key)}>
-            Delete User
+          <Button className="funds-button" onClick={() => viewFunds(record)}>
+            Funds
           </Button>
-          <Button type="default" onClick={() => viewKYC(record)}>
-            View KYC Verification
+          <Button
+            className="account-request-button"
+            onClick={() => viewAccountRequest(record)}
+          >
+            Account Request
           </Button>
-        </Space>
+          <Button
+            className="send-details-button"
+            onClick={() => viewSendDetails(record)}
+          >
+            Send Details
+          </Button>{" "}
+          {/* New Button */}
+        </div>
       ),
-      width: '25%',
+      className: "custom-table-column",
     },
   ];
-
-  const viewUser = (record) => {
-    setSelectedUser(record);
-    setIsModalVisible(true);
-  };
 
   const viewKYC = (record) => {
     setSelectedUser(record);
     setIsKycModalVisible(true);
   };
 
-  const handleCancel = () => {
-    setIsModalVisible(false);
-    setIsKycModalVisible(false);
-    setSelectedUser(null);
-    setAmount(0);
+  const viewFunds = (record) => {
+    setSelectedUser(record);
+    setIsFundsModalVisible(true);
   };
 
-  const deleteUser = (key) => {
-    const confirmed = window.confirm('Are you sure you want to delete this user?');
-    if (confirmed) {
-      alert(`User with key ${key} has been deleted.`);
+  const viewAccountRequest = (record) => {
+    setSelectedUser(record);
+    setIsAccountRequestModalVisible(true);
+  };
+
+  const viewSendDetails = (record) => {
+    setSelectedUser(record);
+    setIsSendDetailsModalVisible(true); // Open the new modal
+  };
+
+  const handleVerifyKYC = () => {
+    if (selectedUser) {
+      selectedUser.kyc.isVerified = true;
+      setSelectedUser({ ...selectedUser });
+      notification.success({ message: "KYC Verified successfully!" });
     }
   };
 
-  const handleTransaction = () => {
-    if (amount <= 0) {
-      alert('Amount must be greater than zero!');
-      return;
+  const handleAcceptAccountRequest = () => {
+    if (selectedUser) {
+      selectedUser.accountRequestStatus = "accepted";
+      setAcceptedUsers([...acceptedUsers, selectedUser]);
+      setIsAccountRequestModalVisible(false);
+      notification.success({
+        message: `Account request for ${selectedUser.userName} accepted!`,
+      });
     }
+  };
 
-    const newTransaction = {
-      type: transactionType.charAt(0).toUpperCase() + transactionType.slice(1), // Capitalizing the first letter
-      amount: amount,
-      date: new Date().toLocaleDateString(),
-    };
+  const handleSendDetails = () => {
+    if (selectedUser) {
+      // Logic to send email and password along with account type
+      notification.success({
+        message: `Details sent to ${email}`,
+        description: `Account Type: ${accountType}`, // Include selected account type in notification
+      });
+      setIsSendDetailsModalVisible(false); // Close the modal after sending
+    }
+  };
 
-    if (accountType === 'demo') {
-      selectedUser.demoAccountTransactions.push(newTransaction);
+  const handlePaymentDone = (transaction) => {
+    if (selectedUser) {
+      // Find the transaction in the selected user's data and update its status
+      const updatedTransactions = selectedUser.demoAccountTransactions.map(
+        (txn) => {
+          if (txn.type === "Withdraw" && txn.date === transaction.date) {
+            return { ...txn, status: "completed" };
+          }
+          return txn;
+        }
+      );
+
+      // Update the selectedUser's transactions
+      const updatedUser = {
+        ...selectedUser,
+        demoAccountTransactions: updatedTransactions,
+      };
+      setSelectedUser(updatedUser);
+
+      // Optional: Show a notification or update state to reflect the change
+      notification.success({
+        message: "Payment marked as done",
+        description: `The withdrawal of $${transaction.amount} has been marked as completed.`,
+      });
+    }
+  };
+
+  const handleImageClick = (imageSrc) => {
+    setImagePreviewSrc(imageSrc);
+    setImagePreviewVisible(true);
+  };
+
+  const handleDepositChange = (e) => {
+    setDepositAmount(e.target.value);
+  };
+
+  // Handle deposit submission
+  const handleDepositSubmit = () => {
+    if (depositAmount && !isNaN(depositAmount) && Number(depositAmount) > 0) {
+      const newTransaction = {
+        type: "Deposit",
+        amount: Number(depositAmount),
+        date: new Date().toISOString().split("T")[0], // Current date
+        image: null, // No image for new deposits
+      };
+
+      // Add the new deposit to the `newDeposits` state
+      setNewDeposits([...newDeposits, newTransaction]);
+
+      // Reset the deposit input field
+      setDepositAmount("");
     } else {
-      selectedUser.liveAccountTransactions.push(newTransaction);
+      alert("Please enter a valid deposit amount.");
     }
+  };
 
-    // Update the user state to trigger re-render
-    setSelectedUser({ ...selectedUser });
-
-    // Close the modal and reset form
-    setAmount(0);
-    setIsModalVisible(false);
+  const handleCancel = () => {
+    setIsKycModalVisible(false);
+    setIsFundsModalVisible(false);
+    setIsAccountRequestModalVisible(false);
+    setIsSendDetailsModalVisible(false); // Close the send details modal
+    setSelectedUser(null);
   };
 
   return (
@@ -137,97 +233,7 @@ const User = () => {
         className="custom-table"
       />
 
-      {/* Modal for viewing user details */}
-      <Modal
-        title="User Details"
-        visible={isModalVisible}
-        onCancel={handleCancel}
-        footer={null}
-        width={900}
-      >
-        {selectedUser && (
-          <div className="modal-content">
-            {/* User Info */}
-            <div className="user-info">
-              <p><strong>Name:</strong> {selectedUser.userName}</p>
-              <p><strong>Email:</strong> {selectedUser.email}</p>
-              <p><strong>Phone Number:</strong> {selectedUser.phone}</p>
-              <p><strong>Funds Balance:</strong> ${selectedUser.funds}</p>
-            </div>
-
-            {/* Deposit/Withdraw Form */}
-            <div className="transaction-form">
-              <Form layout="inline">
-                <Form.Item label="Amount">
-                  <Input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter amount"
-                  />
-                </Form.Item>
-                <Form.Item label="Account Type">
-                  <Select
-                    value={accountType}
-                    onChange={(value) => setAccountType(value)}
-                    style={{ width: 120 }}
-                  >
-                    <Select.Option value="demo">Demo Account</Select.Option>
-                    <Select.Option value="live">Live Account</Select.Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item label="Transaction Type">
-                  <Select
-                    value={transactionType}
-                    onChange={(value) => setTransactionType(value)}
-                    style={{ width: 120 }}
-                  >
-                    <Select.Option value="deposit">Deposit</Select.Option>
-                    <Select.Option value="withdraw">Withdraw</Select.Option>
-                  </Select>
-                </Form.Item>
-              </Form>
-
-              <Button type="primary" onClick={handleTransaction} style={{ marginTop: 10 }}>
-                Execute Transaction
-              </Button>
-            </div>
-
-            {/* Tabs for demo and live account transactions */}
-            <Tabs defaultActiveKey="1" style={{ marginTop: '20px' }}>
-              <TabPane tab="Demo Account" key="1">
-                <h3>Transaction History</h3>
-                <List
-                  dataSource={selectedUser.demoAccountTransactions}
-                  renderItem={(transaction) => (
-                    <List.Item>
-                      <div>
-                        <strong>{transaction.type}:</strong> ${transaction.amount} on {transaction.date}
-                      </div>
-                    </List.Item>
-                  )}
-                />
-              </TabPane>
-
-              <TabPane tab="Live Account" key="2">
-                <h3>Transaction History</h3>
-                <List
-                  dataSource={selectedUser.liveAccountTransactions}
-                  renderItem={(transaction) => (
-                    <List.Item>
-                      <div>
-                        <strong>{transaction.type}:</strong> ${transaction.amount} on {transaction.date}
-                      </div>
-                    </List.Item>
-                  )}
-                />
-              </TabPane>
-            </Tabs>
-          </div>
-        )}
-      </Modal>
-
-      {/* Modal for viewing KYC details */}
+      {/* KYC Modal */}
       <Modal
         title="KYC Verification"
         visible={isKycModalVisible}
@@ -237,30 +243,339 @@ const User = () => {
       >
         {selectedUser && (
           <div className="kyc-content">
-            <div className="kyc-document">
+            <div>
               <h3>CNIC Front</h3>
-              {selectedUser.kyc.cnicFront ? (
-                <Image src={selectedUser.kyc.cnicFront} alt="CNIC Front" width={300} />
-              ) : (
-                <p>No data available</p>
-              )}
+              <img
+                src={selectedUser.kyc.cnicFront}
+                alt="CNIC Front"
+                width={200}
+              />
             </div>
-            <div className="kyc-document">
+            <div>
               <h3>CNIC Back</h3>
-              {selectedUser.kyc.cnicBack ? (
-                <Image src={selectedUser.kyc.cnicBack} alt="CNIC Back" width={300} />
-              ) : (
-                <p>No data available</p>
-              )}
+              <img
+                src={selectedUser.kyc.cnicBack}
+                alt="CNIC Back"
+                width={200}
+              />
             </div>
-            <div className="kyc-document">
-              <h3>Utility Bill</h3>
-              {selectedUser.kyc.utilityBill ? (
-                <Image src={selectedUser.kyc.utilityBill} alt="Utility Bill" width={300} />
-              ) : (
-                <p>No data available</p>
-              )}
+            <div>
+              <h3>Bank Details</h3>
+              <p>
+                <strong>Account Number:</strong>{" "}
+                {selectedUser.kyc.bankDetails.accountNumber}
+              </p>
+              <p>
+                <strong>IBAN Number:</strong>{" "}
+                {selectedUser.kyc.bankDetails.ibanNumber}
+              </p>
+              <p>
+                <strong>Holder Name:</strong>{" "}
+                {selectedUser.kyc.bankDetails.holderName}
+              </p>
+              <p>
+                <strong>Bank Name:</strong>{" "}
+                {selectedUser.kyc.bankDetails.bankName}
+              </p>
             </div>
+            {!selectedUser.kyc.isVerified && (
+              <Button type="primary" onClick={handleVerifyKYC}>
+                Verify KYC
+              </Button>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Funds Modal */}
+      <Modal
+        title="Funds Transactions"
+        visible={isFundsModalVisible}
+        onCancel={handleCancel}
+        footer={null}
+        width={700}
+      >
+        {selectedUser && (
+          <Tabs defaultActiveKey="1" type="card">
+            {/* Tab 1: Deposit Images */}
+            <Tab key="1" tab="Deposit Images">
+              <h3>Deposit History</h3>
+              <List
+                dataSource={selectedUser.demoAccountTransactions.filter(
+                  (txn) => txn.type === "Deposit"
+                )}
+                renderItem={(transaction) => (
+                  <List.Item>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <strong>{transaction.type}:</strong> $
+                        {transaction.amount} on {transaction.date}
+                      </div>
+                      {/* Image preview section */}
+                      {transaction.image ? (
+                        <div
+                          onClick={() => handleImageClick(transaction.image)}
+                          style={{
+                            cursor: "pointer",
+                            width: "50px",
+                            height: "50px",
+                            marginLeft: "10px",
+                            position: "relative",
+                          }}
+                        >
+                          <Image
+                            src={transaction.image}
+                            alt="Deposit Image"
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ marginLeft: "10px" }}>
+                          <Image
+                            src="https://via.placeholder.com/50"
+                            alt="Placeholder Image"
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </Tab>
+
+            {/* Tab 2: Add Deposit */}
+            <Tab key="2" tab="Add Deposit">
+              <h3>Add Deposit</h3>
+              <div style={{ marginBottom: "10px" }}>
+                <Input
+                  type="number"
+                  placeholder="Enter deposit amount"
+                  value={depositAmount}
+                  onChange={handleDepositChange}
+                />
+              </div>
+              <Button
+                type="primary"
+                onClick={handleDepositSubmit}
+                style={{ marginTop: "10px" }}
+              >
+                Add Deposit
+              </Button>
+            </Tab>
+
+            {/* Tab 3: Withdraw History */}
+            <Tab key="3" tab="Withdraw History">
+              <h3>Withdraw History</h3>
+              <List
+                dataSource={selectedUser.demoAccountTransactions.filter(
+                  (txn) => txn.type === "Withdraw"
+                )}
+                renderItem={(transaction) => (
+                  <List.Item>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <strong>{transaction.type}:</strong> $
+                        {transaction.amount} on {transaction.date}
+                      </div>
+                      <Button
+                        type="primary"
+                        style={{ marginLeft: "10px" }}
+                        disabled={transaction.status === "completed"}
+                        onClick={() => handlePaymentDone(transaction)}
+                      >
+                        {transaction.status === "completed"
+                          ? "Payment Done"
+                          : "Mark Payment Done"}
+                      </Button>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </Tab>
+
+            {/* Tab 4: Transaction History */}
+            <Tab key="4" tab="Transaction History">
+              <h3>All Transactions</h3>
+              <List
+                dataSource={[
+                  ...selectedUser.demoAccountTransactions,
+                  ...selectedUser.liveAccountTransactions,
+                  ...newDeposits, // Include newly added deposits
+                ]}
+                renderItem={(transaction) => (
+                  <List.Item>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <strong>{transaction.type}:</strong> $
+                        {transaction.amount} on {transaction.date}
+                      </div>
+                      {transaction.type === "Withdraw" && (
+                        <Button
+                          type="primary"
+                          style={{ marginLeft: "10px" }}
+                          disabled={transaction.status === "completed"}
+                          onClick={() => handlePaymentDone(transaction)}
+                        >
+                          {transaction.status === "completed"
+                            ? "Payment Done"
+                            : "Mark Payment Done"}
+                        </Button>
+                      )}
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </Tab>
+          </Tabs>
+        )}
+
+        {/* Image Preview Modal */}
+        <Modal
+          visible={imagePreviewVisible}
+          footer={null}
+          onCancel={() => setImagePreviewVisible(false)}
+          width={800}
+        >
+          <Image src={imagePreviewSrc} alt="Preview" />
+        </Modal>
+      </Modal>
+
+      {/* Account Request Modal */}
+      <Modal
+        title="Account Request Details"
+        visible={isAccountRequestModalVisible}
+        onCancel={handleCancel}
+        footer={null}
+        width={700}
+      >
+        {selectedUser && (
+          <div className="account-request-content">
+            <Table
+              dataSource={[selectedUser]}
+              columns={[
+                { title: "User Name", dataIndex: "userName", key: "userName" },
+                {
+                  title: "Account Type",
+                  dataIndex: "accountType",
+                  key: "accountType",
+                },
+                {
+                  title: "Request Status",
+                  dataIndex: "accountRequestStatus",
+                  key: "accountRequestStatus",
+                },
+              ]}
+              pagination={false}
+              rowKey="key"
+            />
+            <Button type="primary" onClick={handleAcceptAccountRequest}>
+              Accept Request
+            </Button>
+
+            {/* Accepted Account Requests Table inside the Modal */}
+            <h3 style={{ marginTop: "20px" }}>Accepted Account Requests</h3>
+            <Table
+              columns={[
+                { title: "User Name", dataIndex: "userName", key: "userName" },
+                {
+                  title: "Account Type",
+                  dataIndex: "accountType",
+                  key: "accountType",
+                },
+                {
+                  title: "Status",
+                  dataIndex: "accountRequestStatus",
+                  key: "accountRequestStatus",
+                },
+              ]}
+              dataSource={acceptedUsers}
+              pagination={false}
+              rowKey="key"
+            />
+
+            {/* Send Details Button */}
+            <Button
+              type="primary"
+              onClick={() => setIsSendDetailsModalVisible(true)}
+              style={{ marginTop: "20px" }}
+            >
+              Send Details
+            </Button>
+          </div>
+        )}
+      </Modal>
+
+      {/* Send Details Modal */}
+      <Modal
+        title="Send User Details"
+        visible={isSendDetailsModalVisible}
+        onCancel={handleCancel}
+        footer={null}
+        width={500}
+      >
+        {selectedUser && (
+          <div className="send-details-content">
+            <div>
+              <h4>Email</h4>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email"
+              />
+            </div>
+            <div style={{ marginTop: "10px" }}>
+              <h4>Password</h4>
+              <Input.Password
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+              />
+            </div>
+            <div style={{ marginTop: "10px" }}>
+              <h4>Account Type</h4>
+              <Radio.Group
+                onChange={(e) => setAccountType(e.target.value)}
+                value={accountType}
+              >
+                <Radio value="demo">Demo</Radio>
+                <Radio value="live">Live</Radio>
+              </Radio.Group>
+            </div>
+            <Button
+              type="primary"
+              onClick={handleSendDetails}
+              style={{ marginTop: "20px" }}
+            >
+              Send
+            </Button>
           </div>
         )}
       </Modal>
