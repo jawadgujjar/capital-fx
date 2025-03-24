@@ -108,6 +108,42 @@ const User = () => {
     },
   ];
 
+  const accountRequestColumns = [
+    {
+      title: "User Name",
+      dataIndex: "userName",
+      key: "userName"
+    },
+    {
+      title: "Account Type",
+      dataIndex: "accountType",
+      key: "accountType"
+    },
+    {
+      title: "Request Status",
+      dataIndex: "accountRequestStatus",
+      key: "accountRequestStatus",
+      render: (status) => (
+        <span style={{ color: status === 'accepted' ? 'green' : 'orange' }}>
+          {status.toUpperCase()}
+        </span>
+      )
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, record) => (
+        <Button
+          type="primary"
+          onClick={() => handleAcceptAccountRequest(record.key)}
+          disabled={record.accountRequestStatus === "accepted"}
+        >
+          Accept
+        </Button>
+      ),
+    },
+  ];
+
   const viewKYC = (record) => {
     setSelectedUser(record);
     setIsKycModalVisible(true);
@@ -299,64 +335,60 @@ const User = () => {
           <Tabs defaultActiveKey="1" type="card">
             {/* Tab 1: Deposit Images */}
             <Tab key="1" tab="Deposit Images">
-              <h3>Deposit History</h3>
-              <List
-                dataSource={selectedUser.demoAccountTransactions.filter(
-                  (txn) => txn.type === "Deposit"
-                )}
-                renderItem={(transaction) => (
-                  <List.Item>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        width: "100%",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <strong>{transaction.type}:</strong> $
-                        {transaction.amount} on {transaction.date}
-                      </div>
-                      {/* Image preview section */}
-                      {transaction.image ? (
-                        <div
-                          onClick={() => handleImageClick(transaction.image)}
-                          style={{
-                            cursor: "pointer",
-                            width: "50px",
-                            height: "50px",
-                            marginLeft: "10px",
-                            position: "relative",
-                          }}
-                        >
-                          <Image
-                            src={transaction.image}
-                            alt="Deposit Image"
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              objectFit: "cover",
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div style={{ marginLeft: "10px" }}>
-                          <Image
-                            src="https://via.placeholder.com/50"
-                            alt="Placeholder Image"
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              objectFit: "cover",
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </List.Item>
-                )}
+  <h3>Deposit Images</h3>
+  <div style={{ 
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+    gap: '16px',
+    padding: '16px'
+  }}>
+    {selectedUser.demoAccountTransactions
+      .filter(txn => txn.type === "Deposit")
+      .map((transaction, index) => (
+        transaction.images?.length > 0 ? (
+          transaction.images.map((img, imgIndex) => (
+            <div
+              key={`${index}-${imgIndex}`}
+              onClick={() => handleImageClick(img)}
+              style={{
+                cursor: 'pointer',
+                position: 'relative',
+                paddingBottom: '100%',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}
+            >
+              <Image
+                src={img}
+                alt={`Deposit ${index + 1}-${imgIndex + 1}`}
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+                preview={false}
               />
-            </Tab>
+            </div>
+          ))
+        ) : (
+          <div
+            key={index}
+            style={{
+              backgroundColor: '#f0f0f0',
+              borderRadius: '8px',
+              padding: '16px',
+              textAlign: 'center'
+            }}
+          >
+            No Images
+          </div>
+        )
+      ))
+    }
+  </div>
+</Tab>
 
             {/* Tab 2: Add Deposit */}
             <Tab key="2" tab="Add Deposit">
@@ -469,67 +501,27 @@ const User = () => {
 
       {/* Account Request Modal */}
       <Modal
-        title="Account Request Details"
+        title="Account Requests"
         visible={isAccountRequestModalVisible}
         onCancel={handleCancel}
         footer={null}
-        width={700}
+        width={800}
       >
-        {selectedUser && (
-          <div className="account-request-content">
-            <Table
-              dataSource={[selectedUser]}
-              columns={[
-                { title: "User Name", dataIndex: "userName", key: "userName" },
-                {
-                  title: "Account Type",
-                  dataIndex: "accountType",
-                  key: "accountType",
-                },
-                {
-                  title: "Request Status",
-                  dataIndex: "accountRequestStatus",
-                  key: "accountRequestStatus",
-                },
-              ]}
-              pagination={false}
-              rowKey="key"
-            />
-            <Button type="primary" onClick={handleAcceptAccountRequest}>
-              Accept Request
-            </Button>
+        <h3>Pending Requests</h3>
+        <Table
+          columns={accountRequestColumns}
+          dataSource={data.filter(user => user.accountRequestStatus === "pending")}
+          pagination={false}
+          rowKey="key"
+        />
 
-            {/* Accepted Account Requests Table inside the Modal */}
-            <h3 style={{ marginTop: "20px" }}>Accepted Account Requests</h3>
-            <Table
-              columns={[
-                { title: "User Name", dataIndex: "userName", key: "userName" },
-                {
-                  title: "Account Type",
-                  dataIndex: "accountType",
-                  key: "accountType",
-                },
-                {
-                  title: "Status",
-                  dataIndex: "accountRequestStatus",
-                  key: "accountRequestStatus",
-                },
-              ]}
-              dataSource={acceptedUsers}
-              pagination={false}
-              rowKey="key"
-            />
-
-            {/* Send Details Button */}
-            <Button
-              type="primary"
-              onClick={() => setIsSendDetailsModalVisible(true)}
-              style={{ marginTop: "20px" }}
-            >
-              Send Details
-            </Button>
-          </div>
-        )}
+        <h3 style={{ marginTop: "20px" }}>Accepted Requests</h3>
+        <Table
+          columns={accountRequestColumns}
+          dataSource={data.filter(user => user.accountRequestStatus === "accepted")}
+          pagination={false}
+          rowKey="key"
+        />
       </Modal>
 
       {/* Send Details Modal */}
