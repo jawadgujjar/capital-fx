@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { users,kyc } from "../utils/axios";
 import {
   Table,
   Button,
@@ -15,38 +16,7 @@ import "./user.css"; // Ensure custom CSS is applied
 const { Tab } = Tabs;
 
 const User = () => {
-  const data = [
-    {
-      key: "1",
-      userName: "John Doe",
-      email: "john@example.com",
-      phone: "+1234567890",
-      funds: 5000,
-      accountType: "demo", // demo/live account type
-      accountRequestStatus: "pending", // pending/accepted
-      demoAccountTransactions: [
-        { type: "Deposit", amount: 2000, date: "2025-03-20" },
-        { type: "Withdraw", amount: 500, date: "2025-03-19" },
-      ],
-      liveAccountTransactions: [
-        { type: "Deposit", amount: 1000, date: "2025-03-18" },
-        { type: "Withdraw", amount: 300, date: "2025-03-17" },
-      ],
-      kyc: {
-        cnicFront: "path_to_cnic_front_image.jpg",
-        cnicBack: "path_to_cnic_back_image.jpg",
-        bankDetails: {
-          accountNumber: "123456789",
-          ibanNumber: "GB29XABC10161234567801",
-          holderName: "John Doe",
-          bankName: "Bank of Example",
-        },
-        isVerified: false,
-      },
-    },
-    // More user data...
-  ];
-
+  const [data, setData] = useState([]); // State to store user data
   const [depositAmount, setDepositAmount] = useState("");
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
   const [imagePreviewSrc, setImagePreviewSrc] = useState("");
@@ -64,6 +34,112 @@ const User = () => {
   const [email, setEmail] = useState(""); // State for email input
   const [password, setPassword] = useState(""); // State for password input
   const [accountType, setAccountType] = useState("demo"); // State for account type (live/demo)
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("token"); // Get the token from localStorage
+
+        if (!token) {
+          notification.error({
+            message: "Authentication Error",
+            description: "No authentication token found. Please log in.",
+          });
+          return;
+        }
+
+        // Make the API request with the token in the Authorization header
+        const response = await users.get("/", {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include token in the Authorization header
+          },
+        });
+
+        console.log(response); // Log the response for debugging
+
+        // Assuming the API returns an array of users in response.data.results
+        const usersData = response.data.results;
+
+        // Filter out admins based on their role
+        const filteredUsers = usersData.filter((user) => user.role !== "admin"); // Adjust this condition based on your API response
+
+        setData(filteredUsers); // Set only non-admin users in the state
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        notification.error({
+          message: "Failed to fetch user data",
+          description: "Please try again later.",
+        });
+      }
+    };
+
+    fetchUsers();
+  }, []); // Empty dependency array ensures this runs only once on mount
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token'); // Get the token from localStorage
+  
+        if (!token) {
+          notification.error({
+            message: 'Authentication Error',
+            description: 'No authentication token found. Please log in.',
+          });
+          return;
+        }
+  
+        // Make the API request with the token in the Authorization header
+        const response = await users.get('/', {
+          headers: {
+            'Authorization': `Bearer ${token}`, // Include token in the Authorization header
+          },
+        });
+  
+        console.log(response); // Log the response for debugging
+  
+        const usersData = response.data.results;
+  
+        // Fetch KYC details for each user
+        const usersWithKYC = await Promise.all(
+          usersData.map(async (user) => {
+            try {
+              // Assuming each user has an ID, and we can fetch KYC details with it
+              const kycResponse = await kyc.get(`/${user.id}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              });
+  
+              return {
+                ...user,
+                kyc: kycResponse.data, // Attach KYC data to user
+              };
+            } catch (kycError) {
+              console.error('Error fetching KYC data:', kycError);
+              return {
+                ...user,
+                kyc: null, // In case of error, attach null to KYC data
+              };
+            }
+          })
+        );
+  
+        // Filter out admins based on their role
+        const filteredUsers = usersWithKYC.filter((user) => user.role !== 'admin');
+        setData(filteredUsers); // Set only non-admin users in the state
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        notification.error({
+          message: 'Failed to fetch user data',
+          description: 'Please try again later.',
+        });
+      }
+    };
+  
+    fetchUsers();
+  }, []);
+  
 
   const columns = [
     {
@@ -108,6 +184,42 @@ const User = () => {
     },
   ];
 
+  const accountRequestColumns = [
+    {
+      title: "User Name",
+      dataIndex: "userName",
+      key: "userName",
+    },
+    {
+      title: "Account Type",
+      dataIndex: "accountType",
+      key: "accountType",
+    },
+    {
+      title: "Request Status",
+      dataIndex: "accountRequestStatus",
+      key: "accountRequestStatus",
+      render: (status) => (
+        <span style={{ color: status === "accepted" ? "green" : "orange" }}>
+          {status.toUpperCase()}
+        </span>
+      ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, record) => (
+        <Button
+          type="primary"
+          onClick={() => handleAcceptAccountRequest(record.key)}
+          disabled={record.accountRequestStatus === "accepted"}
+        >
+          Accept
+        </Button>
+      ),
+    },
+  ];
+
   const viewKYC = (record) => {
     setSelectedUser(record);
     setIsKycModalVisible(true);
@@ -128,13 +240,34 @@ const User = () => {
     setIsSendDetailsModalVisible(true); // Open the new modal
   };
 
-  const handleVerifyKYC = () => {
-    if (selectedUser) {
-      selectedUser.kyc.isVerified = true;
-      setSelectedUser({ ...selectedUser });
-      notification.success({ message: "KYC Verified successfully!" });
+  const handleVerifyKYC = async () => {
+    if (selectedUser && selectedUser.kyc) {
+      try {
+        // Call API to update the KYC verification status
+        const token = localStorage.getItem('token');
+        const response = await kyc.put(`/${selectedUser.id}`, null, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+  
+        // Update KYC status locally if API call is successful
+        setSelectedUser({
+          ...selectedUser,
+          kyc: {
+            ...selectedUser.kyc,
+            isVerified: true,
+          },
+        });
+  
+        notification.success({ message: 'KYC Verified successfully!' });
+      } catch (error) {
+        console.error('Error verifying KYC:', error);
+        notification.error({ message: 'Failed to verify KYC' });
+      }
     }
   };
+  
 
   const handleAcceptAccountRequest = () => {
     if (selectedUser) {
@@ -201,14 +334,32 @@ const User = () => {
         type: "Deposit",
         amount: Number(depositAmount),
         date: new Date().toISOString().split("T")[0], // Current date
-        image: null, // No image for new deposits
       };
 
-      // Add the new deposit to the `newDeposits` state
-      setNewDeposits([...newDeposits, newTransaction]);
+      // Update the selectedUser's transactions based on the account type
+      const updatedUser = { ...selectedUser };
+      if (selectedUser.accountType === "demo") {
+        updatedUser.demoAccountTransactions = [
+          ...selectedUser.demoAccountTransactions,
+          newTransaction,
+        ];
+      } else if (selectedUser.accountType === "live") {
+        updatedUser.liveAccountTransactions = [
+          ...selectedUser.liveAccountTransactions,
+          newTransaction,
+        ];
+      }
+
+      // Update the selectedUser state
+      setSelectedUser(updatedUser);
 
       // Reset the deposit input field
       setDepositAmount("");
+
+      // Show success notification
+      notification.success({
+        message: "Deposit added successfully!",
+      });
     } else {
       alert("Please enter a valid deposit amount.");
     }
@@ -241,7 +392,7 @@ const User = () => {
         footer={null}
         width={700}
       >
-        {selectedUser && (
+        {selectedUser && selectedUser.kyc ? (
           <div className="kyc-content">
             <div>
               <h3>CNIC Front</h3>
@@ -284,6 +435,8 @@ const User = () => {
               </Button>
             )}
           </div>
+        ) : (
+          <p>No KYC details found for this user.</p>
         )}
       </Modal>
 
@@ -299,63 +452,48 @@ const User = () => {
           <Tabs defaultActiveKey="1" type="card">
             {/* Tab 1: Deposit Images */}
             <Tab key="1" tab="Deposit Images">
-              <h3>Deposit History</h3>
-              <List
-                dataSource={selectedUser.demoAccountTransactions.filter(
-                  (txn) => txn.type === "Deposit"
-                )}
-                renderItem={(transaction) => (
-                  <List.Item>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        width: "100%",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <strong>{transaction.type}:</strong> $
-                        {transaction.amount} on {transaction.date}
-                      </div>
-                      {/* Image preview section */}
-                      {transaction.image ? (
-                        <div
-                          onClick={() => handleImageClick(transaction.image)}
+              <h3>Deposit Images</h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+                  gap: "16px",
+                  padding: "16px",
+                }}
+              >
+                {selectedUser.demoAccountTransactions
+                  .filter(
+                    (txn) => txn.type === "Deposit" && txn.images?.length > 0
+                  ) // Only show transactions with images
+                  .map((transaction, index) =>
+                    transaction.images.map((img, imgIndex) => (
+                      <div
+                        key={`${index}-${imgIndex}`}
+                        onClick={() => handleImageClick(img)}
+                        style={{
+                          cursor: "pointer",
+                          position: "relative",
+                          paddingBottom: "100%",
+                          borderRadius: "8px",
+                          overflow: "hidden",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        }}
+                      >
+                        <Image
+                          src={img}
+                          alt={`Deposit ${index + 1}-${imgIndex + 1}`}
                           style={{
-                            cursor: "pointer",
-                            width: "50px",
-                            height: "50px",
-                            marginLeft: "10px",
-                            position: "relative",
+                            position: "absolute",
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
                           }}
-                        >
-                          <Image
-                            src={transaction.image}
-                            alt="Deposit Image"
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              objectFit: "cover",
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div style={{ marginLeft: "10px" }}>
-                          <Image
-                            src="https://via.placeholder.com/50"
-                            alt="Placeholder Image"
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              objectFit: "cover",
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </List.Item>
-                )}
-              />
+                          preview={false} // Disable default preview to handle it manually
+                        />
+                      </div>
+                    ))
+                  )}
+              </div>
             </Tab>
 
             {/* Tab 2: Add Deposit */}
@@ -421,7 +559,6 @@ const User = () => {
                 dataSource={[
                   ...selectedUser.demoAccountTransactions,
                   ...selectedUser.liveAccountTransactions,
-                  ...newDeposits, // Include newly added deposits
                 ]}
                 renderItem={(transaction) => (
                   <List.Item>
@@ -469,67 +606,31 @@ const User = () => {
 
       {/* Account Request Modal */}
       <Modal
-        title="Account Request Details"
+        title="Account Requests"
         visible={isAccountRequestModalVisible}
         onCancel={handleCancel}
         footer={null}
-        width={700}
+        width={800}
       >
-        {selectedUser && (
-          <div className="account-request-content">
-            <Table
-              dataSource={[selectedUser]}
-              columns={[
-                { title: "User Name", dataIndex: "userName", key: "userName" },
-                {
-                  title: "Account Type",
-                  dataIndex: "accountType",
-                  key: "accountType",
-                },
-                {
-                  title: "Request Status",
-                  dataIndex: "accountRequestStatus",
-                  key: "accountRequestStatus",
-                },
-              ]}
-              pagination={false}
-              rowKey="key"
-            />
-            <Button type="primary" onClick={handleAcceptAccountRequest}>
-              Accept Request
-            </Button>
+        <h3>Pending Requests</h3>
+        <Table
+          columns={accountRequestColumns}
+          dataSource={data.filter(
+            (user) => user.accountRequestStatus === "pending"
+          )}
+          pagination={false}
+          rowKey="key"
+        />
 
-            {/* Accepted Account Requests Table inside the Modal */}
-            <h3 style={{ marginTop: "20px" }}>Accepted Account Requests</h3>
-            <Table
-              columns={[
-                { title: "User Name", dataIndex: "userName", key: "userName" },
-                {
-                  title: "Account Type",
-                  dataIndex: "accountType",
-                  key: "accountType",
-                },
-                {
-                  title: "Status",
-                  dataIndex: "accountRequestStatus",
-                  key: "accountRequestStatus",
-                },
-              ]}
-              dataSource={acceptedUsers}
-              pagination={false}
-              rowKey="key"
-            />
-
-            {/* Send Details Button */}
-            <Button
-              type="primary"
-              onClick={() => setIsSendDetailsModalVisible(true)}
-              style={{ marginTop: "20px" }}
-            >
-              Send Details
-            </Button>
-          </div>
-        )}
+        <h3 style={{ marginTop: "20px" }}>Accepted Requests</h3>
+        <Table
+          columns={accountRequestColumns}
+          dataSource={data.filter(
+            (user) => user.accountRequestStatus === "accepted"
+          )}
+          pagination={false}
+          rowKey="key"
+        />
       </Modal>
 
       {/* Send Details Modal */}

@@ -1,16 +1,13 @@
-import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import Sider from './components/sider/sider'; // Sider component remains the same
-import './App.css'; // Assuming you have a CSS file for global styles
+import React from "react";
+import AppRoutes from "./components/routes/routes"; // Your App Routes
+import { AuthProvider } from "./contextapi"; // AuthContext import
 
-function App() {
+const App = () => {
   return (
-    <Router>
-      <div>
-        <Sider />
-      </div>
-    </Router>
+    <AuthProvider> {/* Wrap the app with AuthProvider */}
+      <AppRoutes /> {/* This renders your routes */}
+    </AuthProvider>
   );
-}
+};
 
 export default App;
