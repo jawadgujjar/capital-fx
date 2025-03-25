@@ -16,7 +16,9 @@ const kyc = axios.create({
 const users = axios.create({
     baseURL: `${baseURL}/users`, // Ensure this is the correct endpoint for login
   });
-
+  const account = axios.create({
+    baseURL: `${baseURL}/account`, // Ensure this is the correct endpoint for login
+  });
 // Generic request interceptor for all instances
 const requestInterceptor = (req) => {
   // Optionally add authorization headers or custom logic
@@ -34,5 +36,6 @@ signup.interceptors.request.use(requestInterceptor, errorInterceptor);
 login.interceptors.request.use(requestInterceptor, errorInterceptor);
 kyc.interceptors.request.use(requestInterceptor, errorInterceptor);
 users.interceptors.request.use(requestInterceptor, errorInterceptor);
+account.interceptors.request.use(requestInterceptor, errorInterceptor);
 
-export { signup, login, kyc, users};
+export { signup, login, kyc, users, account };

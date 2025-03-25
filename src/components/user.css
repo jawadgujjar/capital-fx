@@ -45,13 +45,13 @@
     
   /* Table container */
   .custom-table {
-      width: 90%; /* Set the table width to 90% of the container */
-      max-width: 1200px; /* Limit the maximum width to make it more compact */
-      margin-top: 20px; /* Add small space above the table */
-      border-radius: 10px; /* Add rounded corners to the table */
-      overflow: hidden; /* Prevent border radius from being cut off */
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Add a larger shadow for a more subtle 3D effect */
-  }
+    width: 90%; /* Ensure the table takes the full width of the container */
+    max-width: 1200px; /* Increase the maximum width to make the table wider */
+    margin-top: 20px; /* Add small space above the table */
+    border-radius: 10px; /* Add rounded corners to the table */
+    overflow: hidden; /* Prevent border radius from being cut off */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Add a larger shadow for a more subtle 3D effect */
+}
     
   /* Table header styling */
   .custom-table .ant-table-thead > tr > th {
