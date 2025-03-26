@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { users, kyc, account } from "../utils/axios";
+import { users, kyc, account, deposit, withdraw } from "../utils/axios";
 import {
   Table,
   Button,
@@ -21,6 +21,8 @@ const User = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState("");
+  const [depositImage, setDepositImage] = useState("");
+  const [withdrawData, setWithdrawData] = useState("");
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
   const [imagePreviewSrc, setImagePreviewSrc] = useState("");
   const [isKycModalVisible, setIsKycModalVisible] = useState(false);
@@ -171,6 +173,31 @@ const User = () => {
 
     fetchAccountRequests();
   }, []);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        if (!userId) {
+          console.error("User ID not found in localStorage");
+          return;
+        }
+
+        // Deposit API Call
+        const depositResponse = await deposit.get(`/user/${userId}`);
+        console.log("Deposit Response:", depositResponse.data);
+        setDepositImage(depositResponse.data.image);
+
+        // Withdraw API Call
+        const withdrawResponse = await withdraw.get(`/${userId}`);
+        console.log("Withdraw Response:", withdrawResponse.data);
+        setWithdrawData(withdrawResponse.data); // Withdraw ka data store karne ke liye state chahiye
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const columns = [
     {
@@ -294,21 +321,16 @@ const User = () => {
 
   const handleVerifyKYC = async () => {
     if (selectedUser && selectedUser.id) {
-      // Ensure to use _id (if that's what your DB uses)
       try {
         const token = localStorage.getItem("token");
-
-        // Check if token exists
         if (!token) {
           notification.error({ message: "No authentication token found." });
           return;
         }
 
-        // Assuming the endpoint for verifying KYC is something like '/v1/kyc/verify/:id'
         const response = await kyc.patch(
           `/${selectedUser.id}`,
-          console.log(response),
-          { isVerified: true },
+          { status: "verified" }, // ✅ API ke andar bhi verified bhej rahe hain
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -317,7 +339,7 @@ const User = () => {
             ...selectedUser,
             kyc: {
               ...selectedUser.kyc,
-              isVerified: true,
+              status: "verified", // ✅ UI turant update ho jayegi
             },
           });
           notification.success({ message: "KYC Verified successfully!" });
@@ -362,9 +384,6 @@ const User = () => {
 
       const userId = requestToAccept.userId;
 
-      console.log("Sending request to:", `/${userId}`);
-      console.log("Payload:", { status: "verified" });
-
       const response = await account.patch(
         `/${userId}`,
         {
@@ -382,7 +401,7 @@ const User = () => {
         // Update state only after successful API response
         setAccountRequests((prevRequests) =>
           prevRequests.map((request) =>
-            request.id === requestId  // Changed from _id to id to match your data structure
+            request.id === requestId // Changed from _id to id to match your data structure
               ? { ...request, status: "verified" }
               : request
           )
@@ -406,7 +425,7 @@ const User = () => {
           error.response?.data?.message ||
           "Please check the console for more details",
       });
-      
+
       // Status remains "pending" since the API call failed
     }
   };
@@ -524,29 +543,29 @@ const User = () => {
         {selectedUser?.kyc ? (
           <div>
             <div style={{ marginBottom: 20 }}>
-              <h3>CNIC Front</h3>
-              <Image
-                src={
-                  selectedUser.kyc.cnicFront ||
-                  "https://via.placeholder.com/300x200?text=No+Image"
-                }
-                alt="CNIC Front"
-                width="100%"
-                style={{ maxHeight: 300, objectFit: "contain" }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <h3>CNIC Back</h3>
-              <Image
-                src={
-                  selectedUser.kyc.cnicBack ||
-                  "https://via.placeholder.com/300x200?text=No+Image"
-                }
-                alt="CNIC Back"
-                width="100%"
-                style={{ maxHeight: 300, objectFit: "contain" }}
-              />
+              <h3>Proof of Identity</h3>
+              {selectedUser.kyc.proofOfIdentity?.length > 0 ? (
+                selectedUser.kyc.proofOfIdentity.map((image, index) => (
+                  <Image
+                    key={index}
+                    src={image}
+                    alt={`Proof of Identity ${index + 1}`}
+                    width="100%"
+                    style={{
+                      maxHeight: 300,
+                      objectFit: "contain",
+                      marginBottom: 10,
+                    }}
+                  />
+                ))
+              ) : (
+                <Image
+                  src="https://via.placeholder.com/300x200?text=No+Image"
+                  alt="No Proof of Identity"
+                  width="100%"
+                  style={{ maxHeight: 300, objectFit: "contain" }}
+                />
+              )}
             </div>
 
             <div style={{ marginBottom: 20 }}>
@@ -567,16 +586,7 @@ const User = () => {
               </Descriptions>
             </div>
 
-            {!selectedUser.kyc.isVerified ? (
-              <Button
-                type="primary"
-                onClick={handleVerifyKYC}
-                block
-                size="large"
-              >
-                Verify KYC
-              </Button>
-            ) : (
+            {selectedUser.kyc.status === "verified" ? (
               <div
                 style={{
                   padding: 10,
@@ -588,6 +598,15 @@ const User = () => {
               >
                 <span style={{ color: "#52c41a" }}>✓ KYC Verified</span>
               </div>
+            ) : (
+              <Button
+                type="primary"
+                onClick={handleVerifyKYC}
+                block
+                size="large"
+              >
+                Verify KYC
+              </Button>
             )}
           </div>
         ) : (
@@ -618,38 +637,28 @@ const User = () => {
                   padding: "16px",
                 }}
               >
-                {(selectedUser.demoAccountTransactions || [])
-                  .filter(
-                    (txn) => txn.type === "Deposit" && txn.images?.length > 0
-                  )
-                  .map((transaction, index) =>
-                    transaction.images.map((img, imgIndex) => (
-                      <div
-                        key={`${index}-${imgIndex}`}
-                        onClick={() => handleImageClick(img)}
-                        style={{
-                          cursor: "pointer",
-                          position: "relative",
-                          paddingBottom: "100%",
-                          borderRadius: "8px",
-                          overflow: "hidden",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        }}
-                      >
-                        <Image
-                          src={img}
-                          alt={`Deposit ${index + 1}-${imgIndex + 1}`}
-                          style={{
-                            position: "absolute",
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                          preview={false}
-                        />
-                      </div>
-                    ))
-                  )}
+                {depositImage && (
+                  <div
+                    style={{
+                      position: "relative",
+                      paddingBottom: "100%",
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    <Image
+                      src={depositImage}
+                      alt="Deposit Image"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                      preview={true}
+                    />
+                  </div>
+                )}
               </div>
             </Tab>
 
