@@ -65,11 +65,14 @@ const User = () => {
           .map((user) => ({
             ...user,
             // Ensure consistent field names
-            id: user._id || user.id, // Handle both _id and id
-            userName: user.username || user.userName || "User",
+            id: user.id, // Handle both _id and id
+            userName: user.name || "User",
             email: user.email || "No email",
           }));
-
+        if (regularUsers.length > 0) {
+          localStorage.setItem("userid", regularUsers[0].id);
+        }
+        const userId = regularUsers[0].id;
         // Fetch KYC and other data for regular users
         const usersWithData = await Promise.all(
           regularUsers.map(async (user) => {
@@ -80,7 +83,6 @@ const User = () => {
                   Authorization: `Bearer ${token}`,
                 },
               });
-
               return {
                 ...user,
                 kyc: kycResponse.data || null,
@@ -250,7 +252,7 @@ const User = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <span style={{ color: status === "accepted" ? "green" : "orange" }}>
+        <span style={{ color: status === "verified" ? "green" : "orange" }}>
           {status?.toUpperCase() || "PENDING"}
         </span>
       ),
@@ -291,7 +293,7 @@ const User = () => {
   };
 
   const handleVerifyKYC = async () => {
-    if (selectedUser && selectedUser._id) {
+    if (selectedUser && selectedUser.id) {
       // Ensure to use _id (if that's what your DB uses)
       try {
         const token = localStorage.getItem("token");
@@ -303,8 +305,8 @@ const User = () => {
         }
 
         // Assuming the endpoint for verifying KYC is something like '/v1/kyc/verify/:id'
-        const response = await kyc.put(
-          `/${selectedUser._id}`,
+        const response = await kyc.patch(
+          `/${selectedUser.id}`,
           console.log(response),
           { isVerified: true },
           { headers: { Authorization: `Bearer ${token}` } }
@@ -336,44 +338,56 @@ const User = () => {
   const handleAcceptAccountRequest = async (requestId) => {
     try {
       const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("userId"); // Get user ID from localStorage
-  
-      if (!token || !userId) {
+
+      if (!token) {
         notification.error({
           message: "Authentication Error",
           description: "Please login first",
         });
         return;
       }
-  
-      // Debug: Log the request payload
-      console.log("Sending request to:", `/account/${requestId}/accept`);
-      console.log("Payload:", { userId, status: "accepted" });
-  
-      const response = await account.put(
-        `/account/${requestId}/accept`, // Updated endpoint
-        { 
-          userId, // Include user ID in the request
-          status: "accepted" 
+
+      // Find the request in your state to get the userId
+      const requestToAccept = accountRequests.find(
+        (request) => request.id === requestId
+      );
+
+      if (!requestToAccept) {
+        notification.error({
+          message: "Request Not Found",
+          description: "The account request could not be found",
+        });
+        return;
+      }
+
+      const userId = requestToAccept.userId;
+
+      console.log("Sending request to:", `/${userId}`);
+      console.log("Payload:", { status: "verified" });
+
+      const response = await account.patch(
+        `/${userId}`,
+        {
+          status: "verified",
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            "Content-Type": "application/json",
+          },
         }
       );
-  
+
       if (response.status === 200) {
-        // Update state to move request to accepted tab
-        setAccountRequests(prevRequests => 
-          prevRequests.map(request => 
-            request._id === requestId
-              ? { ...request, status: "accepted" }
+        // Update state only after successful API response
+        setAccountRequests((prevRequests) =>
+          prevRequests.map((request) =>
+            request.id === requestId  // Changed from _id to id to match your data structure
+              ? { ...request, status: "verified" }
               : request
           )
         );
-  
+
         notification.success({
           message: "Request Accepted",
           description: "Account request has been approved successfully",
@@ -383,14 +397,17 @@ const User = () => {
       console.error("Error details:", {
         message: error.message,
         response: error.response?.data,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       notification.error({
         message: "Failed to accept request",
-        description: error.response?.data?.message || 
+        description:
+          error.response?.data?.message ||
           "Please check the console for more details",
       });
+      
+      // Status remains "pending" since the API call failed
     }
   };
   const handleSendDetails = () => {
@@ -747,37 +764,37 @@ const User = () => {
       {/* Account Request Modal */}
       {/* Account Request Modal */}
       <Modal
-  title="Account Requests"
-  visible={isAccountRequestModalVisible}
-  onCancel={handleCancel}
-  footer={null}
-  width={1000}
->
-  <Spin spinning={accountRequestsLoading}>
-    <Tabs defaultActiveKey="1">
-      <Tabs.TabPane tab="Pending Requests" key="1">
-        <Table
-          columns={accountRequestColumns}
-          dataSource={accountRequests.filter(
-            (request) => request.status !== "accepted"
-          )}
-          pagination={false}
-          rowKey="id"
-        />
-      </Tabs.TabPane>
-      <Tabs.TabPane tab="Accepted Requests" key="2">
-        <Table
-          columns={accountRequestColumns}
-          dataSource={accountRequests.filter(
-            (request) => request.status === "accepted"
-          )}
-          pagination={false}
-          rowKey="id"
-        />
-      </Tabs.TabPane>
-    </Tabs>
-  </Spin>
-</Modal>
+        title="Account Requests"
+        visible={isAccountRequestModalVisible}
+        onCancel={handleCancel}
+        footer={null}
+        width={1000}
+      >
+        <Spin spinning={accountRequestsLoading}>
+          <Tabs defaultActiveKey="1">
+            <Tabs.TabPane tab="Pending Requests" key="1">
+              <Table
+                columns={accountRequestColumns}
+                dataSource={accountRequests.filter(
+                  (request) => request.status !== "accepted"
+                )}
+                pagination={false}
+                rowKey="id"
+              />
+            </Tabs.TabPane>
+            <Tabs.TabPane tab="Accepted Requests" key="2">
+              <Table
+                columns={accountRequestColumns}
+                dataSource={accountRequests.filter(
+                  (request) => request.status === "accepted"
+                )}
+                pagination={false}
+                rowKey="id"
+              />
+            </Tabs.TabPane>
+          </Tabs>
+        </Spin>
+      </Modal>
       {/* Send Details Modal */}
       <Modal
         title="Send User Details"

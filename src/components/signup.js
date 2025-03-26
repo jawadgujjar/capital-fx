@@ -117,7 +117,7 @@ const SignupPage = () => {
           </Form.Item>
 
           {/* Age */}
-          <Form.Item
+          {/* <Form.Item
             label={<Text className="signup-label">Age</Text>}
             name="age"
             rules={[
@@ -139,7 +139,7 @@ const SignupPage = () => {
               placeholder="Enter your age"
               className="signup-input"
             />
-          </Form.Item>
+          </Form.Item> */}
 
           {/* Country Dropdown */}
           <Form.Item
