@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { users, kyc, account, deposit, withdraw } from "../utils/axios";
+import {
+  users,
+  kyc,
+  account,
+  deposit,
+  depdraw,
+  withdraw,
+} from "../utils/axios";
 import {
   Table,
   Button,
   Modal,
   List,
+  Form,
   notification,
   Input,
   Radio,
@@ -23,6 +31,9 @@ const User = () => {
   const [depositAmount, setDepositAmount] = useState("");
   const [depositImage, setDepositImage] = useState("");
   const [withdrawData, setWithdrawData] = useState("");
+  const [deposits, setDeposits] = useState({
+    // Structure: { [userId]: [{id, amount, image, date, status}, ...] }
+  });
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
   const [imagePreviewSrc, setImagePreviewSrc] = useState("");
   const [isKycModalVisible, setIsKycModalVisible] = useState(false);
@@ -32,13 +43,15 @@ const User = () => {
   const [isSendDetailsModalVisible, setIsSendDetailsModalVisible] =
     useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [accountRequests, setAccountRequests] = useState([]);
-  const [acceptedUsers, setAcceptedUsers] = useState([]);
+  const [withdrawRequests, setWithdrawRequests] = useState([]);
   const [newDeposits, setNewDeposits] = useState([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [accountType, setAccountType] = useState("demo");
   const [accountRequestsLoading, setAccountRequestsLoading] = useState(false);
+  const [form] = Form.useForm(); // Initialize the form
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -144,9 +157,15 @@ const User = () => {
             Authorization: `Bearer ${token}`,
           },
         });
+        console.log(response, "acounts ka data");
 
-        // Map the API response to match your table columns
-        const processedRequests = response.data.results.map((request) => ({
+        // Filter the API response to only include the requests for the selected user
+        const filteredRequests = response.data.results.filter(
+          (request) => !selectedUserId || request.userId === selectedUserId
+        );
+
+        // Map the filtered data to match your table columns
+        const processedRequests = filteredRequests.map((request) => ({
           id: request.id,
           name: request.name,
           email: request.email,
@@ -172,31 +191,42 @@ const User = () => {
     };
 
     fetchAccountRequests();
-  }, []);
+  }, [selectedUserId]); // Re-fetch requests when selectedUserId changes
   useEffect(() => {
+    // In your useEffect for fetching deposits
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
         const userId = localStorage.getItem("userid");
-        if (!userId) {
-          console.error("User ID not found in localStorage");
+
+        if (!userId || !token) {
+          console.error("User ID or token not found");
           return;
         }
 
-        // Deposit API Call
-        const depositResponse = await deposit.get(`/user/${userId}`);
-        console.log("Deposit Response:", depositResponse.data);
-        setDepositImage(depositResponse.data.image);
-
-        // Withdraw API Call
-        const withdrawResponse = await withdraw.get(`/${userId}`);
-        console.log("Withdraw Response:", withdrawResponse.data);
-        setWithdrawData(withdrawResponse.data); // Withdraw ka data store karne ke liye state chahiye
+        // Fetch deposits for all users (admin view)
+        const depositResponse = await deposit.get("/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Organize deposits by user ID
+        const depositsByUser = {};
+        depositResponse.data.forEach((deposit) => {
+          if (!depositsByUser[deposit.user]) {
+            depositsByUser[deposit.user] = [];
+          }
+          depositsByUser[deposit.user].push(deposit);
+        });
+        setNewDeposits(depositsByUser);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching deposits:", error);
       }
     };
     fetchData();
   }, []);
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+  };
 
   const columns = [
     {
@@ -224,7 +254,7 @@ const User = () => {
           </Button>
           <Button
             className="account-request-button"
-            onClick={() => viewAccountRequest(record)}
+            onClick={() => viewAccountRequest(record)} // Trigger for opening the modal
           >
             Account Request
           </Button>
@@ -305,12 +335,14 @@ const User = () => {
 
   const viewFunds = (record) => {
     setSelectedUser(record);
+    setSelectedUserId(record.id);
     setIsFundsModalVisible(true);
   };
 
   const viewAccountRequest = (record) => {
-    setSelectedUser(record);
-    setIsAccountRequestModalVisible(true);
+    setSelectedUser(record); // Set the selected user details
+    setSelectedUserId(record.id); // Set the selected userId to filter the requests
+    setIsAccountRequestModalVisible(true); // Show the modal
   };
 
   const viewSendDetails = (record) => {
@@ -355,7 +387,60 @@ const User = () => {
       notification.error({ message: "User not found or invalid user ID." });
     }
   };
+  useEffect(() => {
+    if (selectedUserId) {
+      // Fetch withdraw history data when selectedUserId changes
+      fetchWithdrawData(selectedUserId);
+    }
+  }, [selectedUserId]); // Re-run this effect when selectedUserId changes
 
+  const fetchWithdrawData = async (userId) => {
+    setLoading(true); // Show spinner
+    try {
+      const response = await withdraw.get(`/user/${userId}`);
+      if (response.data) {
+        setWithdrawRequests(response.data); // Save withdraw data in state
+      } else {
+        setWithdrawRequests([]); // If no data returned, set as empty array
+      }
+    } catch (error) {
+      console.error("Error fetching withdraw data:", error);
+      notification.error({
+        message: "Error",
+        description: "Failed to fetch withdraw data. Please try again later.",
+      });
+    } finally {
+      setLoading(false); // Hide spinner after data is fetched
+    }
+  };
+
+  const handleDeleteWithdrawRequest = async (withdrawId) => {
+    try {
+      // Make the delete API call
+      const response = await withdraw.delete(`/${withdrawId}`);
+      if (response.data.success) {
+        // If delete successful, remove the item from the state
+        setWithdrawRequests(
+          withdrawRequests.filter((item) => item._id !== withdrawId)
+        );
+        notification.success({
+          message: "Withdraw request deleted successfully!",
+        });
+      } else {
+        notification.error({
+          message: "Failed to delete request",
+          description:
+            response.data.message || "An error occurred while deleting.",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting withdraw request:", error);
+      notification.error({
+        message: "Error",
+        description: "An error occurred while deleting the withdraw request.",
+      });
+    }
+  };
   const handleAcceptAccountRequest = async (requestId) => {
     try {
       const token = localStorage.getItem("token");
@@ -463,46 +548,46 @@ const User = () => {
       });
     }
   };
-
-  const handleImageClick = (imageSrc) => {
-    setImagePreviewSrc(imageSrc);
-    setImagePreviewVisible(true);
-  };
-
   const handleDepositChange = (e) => {
     setDepositAmount(e.target.value);
   };
 
-  const handleDepositSubmit = () => {
+  const handleDepositSubmit = async (userId, email) => {
     if (depositAmount && !isNaN(depositAmount) && Number(depositAmount) > 0) {
-      const newTransaction = {
-        type: "Deposit",
-        amount: Number(depositAmount),
-        date: new Date().toISOString().split("T")[0],
-      };
+      try {
+        // Make the API call for deposit (assuming you have a 'deposit' endpoint)
+        const response = await depdraw.post("/", {
+          userId, // Pass the user ID
+          email, // Pass the email
+          deposit: Number(depositAmount), // Pass the deposit amount
+        });
 
-      const updatedUser = { ...selectedUser };
-      if (selectedUser.accountType === "demo") {
-        updatedUser.demoAccountTransactions = [
-          ...(selectedUser.demoAccountTransactions || []),
-          newTransaction,
-        ];
-      } else {
-        updatedUser.liveAccountTransactions = [
-          ...(selectedUser.liveAccountTransactions || []),
-          newTransaction,
-        ];
+        if (response.data.success) {
+          // API call was successful
+          notification.success({
+            message: "Deposit added successfully!",
+          });
+
+          // Optionally, update the selected user or global state here if necessary
+          setDepositAmount(""); // Reset the deposit amount input
+          form.resetFields(); // Reset form values
+        } else {
+          // API call failed with some error message
+          notification.error({
+            message: "Deposit failed",
+            description:
+              response.data.message ||
+              "Something went wrong. Please try again.",
+          });
+        }
+      } catch (error) {
+        // Handle error during the API call
+        notification.error({
+          message: "Error",
+          description:
+            error.message || "An error occurred while processing the deposit.",
+        });
       }
-
-      setSelectedUser(updatedUser);
-      setData(
-        data.map((user) => (user.key === selectedUser.key ? updatedUser : user))
-      );
-      setDepositAmount("");
-
-      notification.success({
-        message: "Deposit added successfully!",
-      });
     } else {
       notification.error({
         message: "Invalid amount",
@@ -627,7 +712,7 @@ const User = () => {
           <Tabs defaultActiveKey="1" type="card">
             {/* Tab 1: Deposit Images */}
             <Tab key="1" tab="Deposit Images">
-              <h3>Deposit Images</h3>
+              <h3>Deposit Images for {selectedUser.name}</h3>
               <div
                 style={{
                   display: "grid",
@@ -636,8 +721,9 @@ const User = () => {
                   padding: "16px",
                 }}
               >
-                {depositImage && (
+                {newDeposits[selectedUser.id]?.map((deposit, index) => (
                   <div
+                    key={index}
                     style={{
                       position: "relative",
                       paddingBottom: "100%",
@@ -647,8 +733,8 @@ const User = () => {
                     }}
                   >
                     <Image
-                      src={depositImage}
-                      alt="Deposit Image"
+                      src={deposit.image}
+                      alt={`Deposit ${index + 1}`}
                       style={{
                         width: "100%",
                         height: "100%",
@@ -656,7 +742,25 @@ const User = () => {
                       }}
                       preview={true}
                     />
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        background: "rgba(0,0,0,0.7)",
+                        color: "white",
+                        padding: "4px",
+                        fontSize: "12px",
+                      }}
+                    >
+                      Amount: ${deposit.amount}
+                    </div>
                   </div>
+                ))}
+                {(!newDeposits[selectedUser.id] ||
+                  newDeposits[selectedUser.id].length === 0) && (
+                  <p>No deposit images found for this user</p>
                 )}
               </div>
             </Tab>
@@ -672,49 +776,59 @@ const User = () => {
                   onChange={handleDepositChange}
                 />
               </div>
+              {/* Email input */}
+              <div style={{ marginBottom: "10px" }}>
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={handleEmailChange}
+                />
+              </div>
               <Button
                 type="primary"
-                onClick={handleDepositSubmit}
+                onClick={() => handleDepositSubmit(selectedUser.id, email)} // Pass email along with user ID
                 style={{ marginTop: "10px" }}
               >
                 Add Deposit
               </Button>
             </Tab>
-
             {/* Tab 3: Withdraw History */}
             <Tab key="3" tab="Withdraw History">
               <h3>Withdraw History</h3>
-              <List
-                dataSource={(selectedUser.demoAccountTransactions || []).filter(
-                  (txn) => txn.type === "Withdraw"
-                )}
-                renderItem={(transaction) => (
-                  <List.Item>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        width: "100%",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <strong>{transaction.type}:</strong> $
-                        {transaction.amount} on {transaction.date}
-                      </div>
-                      <Button
-                        type="primary"
-                        style={{ marginLeft: "10px" }}
-                        disabled={transaction.status === "completed"}
-                        onClick={() => handlePaymentDone(transaction)}
+              {loading ? (
+                <Spin />
+              ) : (
+                <List
+                  dataSource={withdrawRequests}
+                  renderItem={(transaction) => (
+                    <List.Item>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          width: "100%",
+                        }}
                       >
-                        {transaction.status === "completed"
-                          ? "Payment Done"
-                          : "Mark Payment Done"}
-                      </Button>
-                    </div>
-                  </List.Item>
-                )}
-              />
+                        <div style={{ flex: 1 }}>
+                          <strong>{transaction.type}:</strong> $
+                          {transaction.amount} on {transaction.date}
+                        </div>
+                        <Button
+                          type="primary"
+                          style={{ marginLeft: "10px" }}
+                          disabled={transaction.status === "completed"}
+                          onClick={() =>
+                            handleDeleteWithdrawRequest(transaction._id)
+                          }
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </List.Item>
+                  )}
+                />
+              )}
             </Tab>
 
             {/* Tab 4: Transaction History */}
@@ -770,9 +884,8 @@ const User = () => {
       </Modal>
 
       {/* Account Request Modal */}
-      {/* Account Request Modal */}
       <Modal
-        title="Account Requests"
+        title={`Account Requests for ${selectedUser?.name}`}
         visible={isAccountRequestModalVisible}
         onCancel={handleCancel}
         footer={null}
@@ -780,6 +893,7 @@ const User = () => {
       >
         <Spin spinning={accountRequestsLoading}>
           <Tabs defaultActiveKey="1">
+            {/* Pending Requests Tab */}
             <Tabs.TabPane tab="Pending Requests" key="1">
               <Table
                 columns={accountRequestColumns}
@@ -790,6 +904,8 @@ const User = () => {
                 rowKey="id"
               />
             </Tabs.TabPane>
+
+            {/* Accepted Requests Tab */}
             <Tabs.TabPane tab="Accepted Requests" key="2">
               <Table
                 columns={accountRequestColumns}
