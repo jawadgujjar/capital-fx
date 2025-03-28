@@ -25,6 +25,10 @@ const deposit = axios.create({
 const withdraw = axios.create({
   baseURL: `${baseURL}/withdraw`, // Ensure this is the correct endpoint for login
 });
+const depdraw = axios.create({
+  baseURL: `${baseURL}/depdraws`, // Ensure this is the correct endpoint for login
+});
+
 // Generic request interceptor for all instances
 const requestInterceptor = (req) => {
   // Optionally add authorization headers or custom logic
@@ -45,5 +49,6 @@ users.interceptors.request.use(requestInterceptor, errorInterceptor);
 account.interceptors.request.use(requestInterceptor, errorInterceptor);
 deposit.interceptors.request.use(requestInterceptor, errorInterceptor);
 withdraw.interceptors.request.use(requestInterceptor, errorInterceptor);
+depdraw.interceptors.request.use(requestInterceptor, errorInterceptor);
 
-export { signup, login, kyc, users, account, deposit,withdraw };
+export { signup, login, kyc, users, account, deposit, withdraw, depdraw };
