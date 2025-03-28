@@ -290,7 +290,7 @@ const User = () => {
         <Button
           type="primary"
           onClick={() => handleAcceptAccountRequest(record.id)}
-          disabled={record.status === "accepted"}
+          disabled={record.status === "verified"}
         >
           Accept
         </Button>
