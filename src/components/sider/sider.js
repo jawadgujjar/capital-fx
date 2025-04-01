@@ -2,26 +2,27 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogoutOutlined } from "@ant-design/icons";
 import Dashboard from "../dashboard"; // Assuming you already have this component
-import Broker from "../broker"; // Assuming you already have this component
 import User from "../user"; // Assuming you already have this component
 import "./sider.css"; // Import your custom CSS
+import Helpdesk from "../helpdesk";
 
 const AdminPortal = () => {
   const [activeContent, setActiveContent] = useState("Dashboard"); // Default content
   const navigate = useNavigate(); // Initialize useNavigate
 
   // Hardcoded username instead of fetching from localStorage
-  const username = "FX-Broker"; // Hardcoded username
+  const username = "Admin AJC"; // Hardcoded username
 
   // Function to render the active content
   const renderContent = () => {
     switch (activeContent) {
       case "Dashboard":
         return <Dashboard />;
-      case "Broker":
-        return <Broker />;
+
       case "User":
         return <User />;
+      case "HelpDesk":
+        return <Helpdesk />;
       default:
         return <Dashboard />;
     }
@@ -43,7 +44,7 @@ const AdminPortal = () => {
         </div>
         <nav className="sider-links">
           {/* Links for Dashboard, Broker, and User */}
-          {["Dashboard", "Broker", "User"].map((item) => (
+          {["Dashboard", "User", "HelpDesk"].map((item) => (
             <a
               key={item}
               className={activeContent === item ? "active" : ""}
@@ -52,14 +53,6 @@ const AdminPortal = () => {
               {item}
             </a>
           ))}
-
-          {/* Settings Link */}
-          <a
-            className={activeContent === "Settings" ? "active" : ""}
-            onClick={() => setActiveContent("Settings")}
-          >
-            Settings
-          </a>
         </nav>
 
         {/* Logout Button at the bottom */}

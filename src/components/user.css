@@ -1,209 +1,264 @@
-/* user.css */
-
-/* Container for the user table */
-.user-table-container {
-    padding: 30px;
-    background-color: #f7f7f7; /* Light gray background for the container */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
+/* Scrollable transaction history */
+.transaction-history {
+    max-height: 300px; /* Set a fixed height for the history section */
+    overflow-y: auto;  /* Enable vertical scrolling */
+    margin-top: 20px;
+    padding-right: 10px; /* Added padding to ensure smooth scrolling */
+  }
+  
+  /* Adjust the width of the modal content */
+  .modal-content {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Align items to the top */
-    align-items: center; /* Center the content horizontally */
-    min-height: 100vh; /* Ensure the content takes full height, but does not stretch beyond */
-    margin-top: 0; /* Remove the default margin at the top */
-}
+    gap: 20px;
+    max-height: 80vh; /* Adjust the maximum height of the modal content */
+    overflow-y: auto;  /* Allow vertical scrolling if content overflows */
+  }
   
-/* Heading style for the user table */
-.user-table-heading {
-    font-size: 28px;
-    color: #333;
-    margin-bottom: 20px;
-    font-weight: bold;
-}
+  /* Adjust the tab content styles to fit within the scrollable area */
+  .ant-tabs-content-holder {
+    padding-bottom: 10px; /* Padding to prevent the scrollbar from overlapping */
+    overflow-y: auto; /* Enable vertical scrolling for tab content */
+    max-height: calc(80vh - 20px); /* Ensure that the content height respects the modal height */
+  }
   
-/* Table container */
-.custom-table {
-    width: 90%; /* Set the table width to 90% of the container */
-    max-width: 1200px; /* Limit the maximum width to make it more compact */
+  /* Container for the user table */
+  .user-table-container {
+      padding: 30px;
+      background-color: #f7f7f7; /* Light gray background for the container */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start; /* Align items to the top */
+      align-items: center; /* Center the content horizontally */
+      min-height: 100vh; /* Ensure the content takes full height, but does not stretch beyond */
+      margin-top: 0; /* Remove the default margin at the top */
+  }
+    
+  /* Heading style for the user table */
+  .user-table-heading {
+      font-size: 32px; /* Increased font size for better visibility */
+      color: #333;
+      margin-bottom: 20px;
+      font-weight: bold;
+  }
+    
+  /* Table container */
+  .custom-table {
+    width: 90%; /* Ensure the table takes the full width of the container */
+    max-width: 1200px; /* Increase the maximum width to make the table wider */
     margin-top: 20px; /* Add small space above the table */
     border-radius: 10px; /* Add rounded corners to the table */
     overflow: hidden; /* Prevent border radius from being cut off */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Add a larger shadow for a more subtle 3D effect */
 }
+    
+  /* Table header styling */
+  .custom-table .ant-table-thead > tr > th {
+      background-color: #343a40; /* Dark gray background for table header */
+      color: #ffffff; /* White text color for the header */
+      font-weight: bold; /* Bold font for header */
+      padding: 16px 12px; /* Increased padding for header */
+      text-align: center; /* Center align the text in headers */
+  }
+    
+  /* Table body styling */
+  .custom-table .ant-table-tbody > tr > td {
+      background-color: #f8f9fa; /* Light gray background for table body */
+      color: #555; /* Darker color for table data */
+      padding: 12px 14px; /* Increased padding for table data */
+      text-align: center; /* Center align the text in data */
+      border-bottom: 1px solid #e0e0e0; /* Border between rows */
+  }
+    
+  /* Styling for odd rows */
+  .custom-table .ant-table-tbody > tr:nth-child(odd) > td {
+      background-color: #e9ecef; /* Slightly darker gray for odd rows */
+  }
+    
+  /* Table border styling */
+  .custom-table .ant-table-bordered {
+      border: 1px solid #e0e0e0; /* Light border for table */
+  }
+    
+  /* Styling for action buttons */
+  .custom-table .ant-btn-primary,
+  .custom-table .ant-btn-danger,
+  .custom-table .ant-btn {
+      font-weight: bold;
+      padding: 6px 12px; /* Adjusted padding for better responsiveness */
+      font-size: 12px; /* Smaller font size for button text */
+      border-radius: 4px; /* Rounded corners for buttons */
+      transition: background-color 0.3s ease, transform 0.3s ease;
+      display: inline-flex;
+      align-items: center; /* Align the text and icon centrally */
+      justify-content: center; /* Center align the text */
+  }
   
-/* Table header styling */
-.custom-table .ant-table-thead > tr > th {
-    background-color: #343a40; /* Dark gray background for table header */
-    color: #ffffff; /* White text color for the header */
-    font-weight: bold; /* Bold font for header */
-    padding: 14px 12px; /* Increased padding for header */
-    text-align: center; /* Center align the text in headers */
-}
+  /* Button for "View KYC Verification" - Bigger size */
+  .view-kyc-btn {
+      padding: 12px 20px; /* Increased padding for bigger button */
+      font-size: 14px; /* Slightly larger font size */
+      background-color: #007bff; /* Blue color for "View KYC" */
+      border-color: #007bff;
+      color: white; /* White text color */
+      border-radius: 6px; /* Rounded corners */
+      font-weight: bold; /* Bold font */
+  }
   
-/* Table body styling */
-.custom-table .ant-table-tbody > tr > td {
-    background-color: #f8f9fa; /* Light gray background for table body */
-    color: #555; /* Darker color for table data */
-    padding: 12px 14px; /* Increased padding for table data */
-    text-align: center; /* Center align the text in data */
-    border-bottom: 1px solid #e0e0e0; /* Border between rows */
-}
+  .view-kyc-btn:hover {
+      background-color: #0056b3; /* Darker blue on hover */
+      transform: scale(1.05); /* Slightly enlarge the button */
+  }
   
-/* Styling for odd rows */
-.custom-table .ant-table-tbody > tr:nth-child(odd) > td {
-    background-color: #e9ecef; /* Slightly darker gray for odd rows */
-}
+  /* Specific button styles */
+  .custom-table .ant-btn-primary {
+      background-color: #4CAF50; /* Green button for 'View User' */
+      border-color: #4CAF50;
+  }
   
-/* Table border styling */
-.custom-table .ant-table-bordered {
-    border: 1px solid #e0e0e0; /* Light border for table */
-}
+  .custom-table .ant-btn-primary:hover {
+      background-color: #45a049; /* Darker green when hovered */
+      transform: scale(1.05); /* Slightly increase the button size on hover */
+  }
   
-/* Styling for action buttons */
-.custom-table .ant-btn-primary {
-    background-color: #4CAF50; /* Green button for 'View User' */
-    border-color: #4CAF50;
-    font-weight: bold;
-    padding: 6px 12px; /* Padding for a better button appearance */
-    border-radius: 4px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-}
+  .custom-table .ant-btn-danger {
+      background-color: #f44336; /* Red button for 'Delete User' */
+      border-color: #f44336;
+  }
   
-.custom-table .ant-btn-primary:hover {
-    background-color: #45a049; /* Darker green when hovered */
-    transform: scale(1.05); /* Slightly increase the button size on hover */
-}
+  .custom-table .ant-btn-danger:hover {
+      background-color: #e53935; /* Darker red when hovered */
+      transform: scale(1.05);
+  }
   
-.custom-table .ant-btn-danger {
-    background-color: #f44336; /* Red button for 'Delete User' */
-    border-color: #f44336;
-    font-weight: bold;
-    padding: 6px 12px;
-    border-radius: 4px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-}
+  /* Responsive behavior */
+  @media (max-width: 768px) {
+      .custom-table .ant-btn-primary,
+      .custom-table .ant-btn-danger,
+      .custom-table .ant-btn {
+          padding: 6px 10px; /* Further reduce padding on smaller screens */
+          font-size: 10px; /* Further reduce font size on smaller screens */
+      }
   
-.custom-table .ant-btn-danger:hover {
-    background-color: #e53935; /* Darker red when hovered */
-    transform: scale(1.05);
-}
+      .view-kyc-btn {
+          padding: 10px 16px; /* Adjust padding for small screens */
+          font-size: 12px; /* Adjust font size */
+      }
+  }
   
-.custom-table .ant-btn {
-    border-radius: 4px; /* Rounded corners for buttons */
-}
+  /* Table row hover effect */
+  .custom-table .ant-table-tbody > tr:hover > td {
+      background-color: #f1f3f5; /* Slightly darker gray on row hover */
+      cursor: pointer; /* Change cursor to pointer to indicate clickable */
+  }
   
-/* Table row hover effect */
-.custom-table .ant-table-tbody > tr:hover > td {
-    background-color: #f1f3f5; /* Slightly darker gray on row hover */
-    cursor: pointer; /* Change cursor to pointer to indicate clickable */
-}
+  /* Modal styles */
+  .ant-modal {
+      border-radius: 12px; /* Rounded corners for the modal */
+      padding: 20px;
+      background-color: #fff; /* White background for the modal */
+  }
+    
+  .ant-modal-header {
+      background-color: #f0f0f0; /* Light gray background for header */
+      border-radius: 12px 12px 0 0; /* Rounded corners for modal header */
+  }
+    
+  .ant-modal-title {
+      font-weight: bold; /* Bold title for the modal */
+      color: #333; /* Dark color for the title */
+      font-size: 22px; /* Increased font size for title */
+  }
+    
+  .ant-modal-body {
+      font-size: 16px; /* Standard font size for body */
+      padding: 20px;
+  }
+    
+  .modal-content {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-height: 80vh; /* Adjust the maximum height of the modal content */
+      overflow-y: auto;  /* Allow vertical scrolling if content overflows */
+  }
+    
+  /* User info section inside the modal */
+  .user-info p {
+      font-size: 16px;
+      margin: 8px 0;
+  }
+    
+  .user-info strong {
+      color: #1890ff; /* Blue color for labels */
+  }
+    
+  /* Transaction section in the modal */
+  .transaction-section {
+      margin-top: 20px;
+  }
+    
+  .transaction-section h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #333;
+  }
+    
+  .ant-list-item {
+      font-size: 14px;
+  }
+    
+  .ant-list-item div {
+      background-color: #f9f9f9;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      transition: background-color 0.3s ease;
+  }
+    
+  .ant-list-item:hover {
+      background-color: #e9ecef; /* Light gray background when hovering over a transaction */
+  }
+    
+  /* Modal footer */
+  .ant-modal-footer {
+      display: none; /* Hide the default footer */
+  }
   
-/* Modal styles */
-.ant-modal {
-    border-radius: 12px; /* Rounded corners for the modal */
-    padding: 20px;
-    background-color: #fff; /* White background for the modal */
-}
+  /* KYC Modal Styles */
+  .kyc-content {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+  }
   
-.ant-modal-header {
-    background-color: #f0f0f0; /* Light gray background for header */
-    border-radius: 12px 12px 0 0; /* Rounded corners for modal header */
-}
+  .kyc-document {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+  }
   
-.ant-modal-title {
-    font-weight: bold; /* Bold title for the modal */
-    color: #333; /* Dark color for the title */
-    font-size: 22px; /* Increased font size for title */
-}
+  .kyc-document h3 {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 10px;
+  }
   
-.ant-modal-body {
-    font-size: 16px; /* Standard font size for body */
-    padding: 20px;
-}
+  .kyc-document p {
+      font-size: 16px;
+      color: #888;
+  }
   
-.modal-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
+  .kyc-document .ant-image {
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      max-width: 300px;
+      max-height: 300px;
+  }
   
-/* User info section inside the modal */
-.user-info p {
-    font-size: 16px;
-    margin: 8px 0;
-}
+  .kyc-document img {
+      object-fit: contain;
+  }
   
-.user-info strong {
-    color: #1890ff; /* Blue color for labels */
-}
   
-/* Transaction section in the modal */
-.transaction-section {
-    margin-top: 20px;
-}
-  
-.transaction-section h3 {
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: #333;
-}
-  
-.ant-list-item {
-    font-size: 14px;
-}
-  
-.ant-list-item div {
-    background-color: #f9f9f9;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    transition: background-color 0.3s ease;
-}
-  
-.ant-list-item:hover {
-    background-color: #e9ecef; /* Light gray background when hovering over a transaction */
-}
-  
-/* Modal footer */
-.ant-modal-footer {
-    display: none; /* Hide the default footer */
-}
-
-/* KYC Modal Styles */
-.kyc-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.kyc-document {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.kyc-document h3 {
-    font-size: 18px;
-    color: #333;
-    margin-bottom: 10px;
-}
-
-.kyc-document p {
-    font-size: 16px;
-    color: #888;
-}
-
-.kyc-document .ant-image {
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    max-width: 300px;
-    max-height: 300px;
-}
-
-.kyc-document img {
-    object-fit: contain;
-}
-
-.kyc-document .ant-image-error {
-    display: none; /* Hide the error icon if the image fails */
-}

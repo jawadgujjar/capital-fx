@@ -1,0 +1,128 @@
+ 
+.signup-text {
+  color: white;
+  margin-top: 15px;
+}
+
+.signup-link {
+  color: #ffd700;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}
+.signup-text text{
+color: #bbb !important;
+}
+ 
+@media (max-width: 768px) {
+  .login-card {
+    padding: 20px;
+    max-width: 100%;
+  }
+}
+ 
+.signup-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: black;
+}
+
+ 
+.signup-card {
+  width: 400px;
+  padding: 20px;
+  background: black;
+  color: white;
+  border: 2px solid gold;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
+  text-align: center;
+}
+
+ 
+.signup-title {
+  color: #ffd700 !important;
+  font-size: 24px !important;
+  font-weight: bold !important;
+  margin-bottom: 20px !important;
+}
+
+ 
+.signup-label {
+  color: white;
+  font-weight: bold;
+}
+
+ 
+.signup-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid gold;
+  border-radius: 5px;
+  background: black !important;
+  color: white !important;
+  transition: all 0.3s ease;
+}
+
+ 
+.signup-input::placeholder {
+  color: #bbb;
+}
+
+ 
+.signup-input:focus {
+  color: white !important;
+  background: black !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+ 
+.signup-button {
+  width: 100%;
+  background: #ffd700 !important;
+  border-color: #ffd700 !important;
+  color: black;
+  font-weight: bold;
+  padding: 12px;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+
+.signup-button:hover {
+  background: black !important;
+  border-color: #ffd700 !important;
+  color: #ffd700 !important;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+ 
+.login-text {
+  color: white;
+  margin-top: 15px;
+}
+
+.login-link {
+  color: #ffd700;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+ 
+@media (max-width: 768px) {
+  .signup-card {
+    padding: 20px;
+    max-width: 100%;
+  }
+}
