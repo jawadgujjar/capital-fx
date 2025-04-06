@@ -8,7 +8,6 @@ import {
   Avatar,
   Modal,
   Descriptions,
-  Badge,
   Spin,
   message
 } from "antd";
@@ -100,11 +99,9 @@ const User = () => {
     try {
       setSelectedUserId(userId);
       const token = localStorage.getItem("token");
-
       const response = await kyc.get(`/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setSelectedUserKyc(response.data);
       setIsKycModalVisible(true);
     } catch (error) {
@@ -185,28 +182,16 @@ const User = () => {
   };
 
   const handleRejectAccountRequest = async (requestId) => {
+    console.log(requestId, "id deleted");
     try {
       const token = localStorage.getItem("token");
-      await account.patch(
-        `/${requestId}`,
-        { status: "rejected" },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update both allAccountRequests and filtered accountRequests
-      const updatedRequests = allAccountRequests.map(request =>
-        request._id === requestId
-          ? { ...request, status: "rejected" }
-          : request
-      );
-
-      setAllAccountRequests(updatedRequests);
-      setAccountRequests(updatedRequests.filter(req =>
-        req.userId?.toString() === selectedUserId?.toString()
-      ));
-      message.success("Account request rejected");
+      await account.delete(`/${requestId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      message.success("Account deleted successfully");
     } catch (error) {
-      message.error("Failed to reject account request");
+      message.error("Failed to delete account");
+      console.error(error);
     }
   };
 
@@ -410,12 +395,12 @@ const User = () => {
                     </Tag>
                   ),
                 },
-                {
-                  title: 'Created At',
-                  dataIndex: 'createdAt',
-                  key: 'createdAt',
-                  render: (date) => date ? new Date(date).toLocaleString() : 'N/A',
-                },
+                // {
+                //   title: 'Created At',
+                //   dataIndex: 'createdAt',
+                //   key: 'createdAt',
+                //   render: (date) => date ? new Date(date).toLocaleString() : 'N/A',
+                // },
                 {
                   title: 'Actions',
                   key: 'actions',
@@ -434,10 +419,10 @@ const User = () => {
                         danger
                         size="small"
                         icon={<CloseOutlined />}
-                        onClick={() => handleRejectAccountRequest(record._id)}
+                        onClick={() => handleRejectAccountRequest(record.id)}
                         disabled={record.status === 'rejected'}
                       >
-                        Reject
+                        Delete
                       </Button>
                     </Space>
                   ),
