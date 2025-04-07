@@ -9,17 +9,20 @@ import {
   Modal,
   Descriptions,
   Spin,
-  message
+  message,
+  Form,
+  Input
 } from "antd";
 import {
   UserOutlined,
   MoneyCollectOutlined,
   IdcardOutlined,
   CheckOutlined,
-  CloseOutlined
+  CloseOutlined,
+  MailOutlined
 } from "@ant-design/icons";
 import { users, kyc, account } from "../utils/axios";
-import Transactions from "./transactions"; // Import the Transactions component
+import Transactions from "./transactions";
 import "./user.css";
 
 const User = () => {
@@ -28,11 +31,13 @@ const User = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isKycModalVisible, setIsKycModalVisible] = useState(false);
   const [isAccountModalVisible, setIsAccountModalVisible] = useState(false);
-  const [isTransactionsModalVisible, setIsTransactionsModalVisible] = useState(false); // New state for transactions modal
+  const [isTransactionsModalVisible, setIsTransactionsModalVisible] = useState(false);
+  const [isEmailModalVisible, setIsEmailModalVisible] = useState(false);
   const [selectedUserKyc, setSelectedUserKyc] = useState(null);
   const [accountRequests, setAccountRequests] = useState([]);
   const [allAccountRequests, setAllAccountRequests] = useState([]);
   const [accountRequestsLoading, setAccountRequestsLoading] = useState(false);
+  const [emailForm] = Form.useForm();
 
   // Fetch all users data and account requests
   useEffect(() => {
@@ -46,16 +51,13 @@ const User = () => {
           return;
         }
 
-        // Fetch users and account requests in parallel
         const [usersResponse, accountsResponse] = await Promise.all([
           users.get("/", { headers: { Authorization: `Bearer ${token}` } }),
           account.get("/", { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
-        // Store all account requests
         setAllAccountRequests(accountsResponse.data || []);
 
-        // Process users with their KYC data
         const regularUsers = await Promise.all(
           usersResponse.data.results
             .filter((user) => user.role === "user")
@@ -93,6 +95,40 @@ const User = () => {
 
     fetchData();
   }, []);
+
+  // Email functionality
+  const handleSendEmail = (record) => {
+    setSelectedUserId(record.id);
+    emailForm.setFieldsValue({
+      name: record.name,
+      email: record.email,
+      username: record.username || "",
+      mainPassword: "",
+      investPassword: ""
+    });
+    setIsEmailModalVisible(true);
+  };
+
+  const sendAccountDetailsEmail = async (values) => {
+    try {
+      const token = localStorage.getItem("token");
+      const emailContent = `Dear ${values.name},\n\nYour Real VFX Account Details as follow.\n\nReal Account Details\nName: ${values.name}\nUsername: ${values.username}\nMain Password: ${values.mainPassword}\nInvest Password: ${values.investPassword}\n\nKindest Regards,\nAljadeed Capitals FX Customer Service`;
+
+      await account.post('/send-account-email', {
+        to: values.email,
+        subject: "Your Real VFX Account Details",
+        text: emailContent
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      message.success("Email sent successfully");
+      setIsEmailModalVisible(false);
+    } catch (error) {
+      message.error("Failed to send email");
+      console.error(error);
+    }
+  };
 
   // KYC Actions
   const handleKycAction = async (userId) => {
@@ -133,23 +169,15 @@ const User = () => {
 
   // Account Request Actions
   const handleAccountRequest = (userId) => {
-    console.log("Handling account request for user ID:", userId);
-    console.log("All account requests:", allAccountRequests);
-
     setSelectedUserId(userId);
     setAccountRequestsLoading(true);
 
-    // Filter account requests for the selected user
     const userAccountRequests = allAccountRequests.filter(request => {
-      // Convert both IDs to strings for comparison
       const requestUserId = request.userId?.toString().trim();
       const currentUserId = userId?.toString().trim();
-
-      console.log("Comparing:", requestUserId, "with", currentUserId);
       return requestUserId === currentUserId;
     });
 
-    console.log("Filtered requests:", userAccountRequests);
     setAccountRequests(userAccountRequests);
     setIsAccountModalVisible(true);
     setAccountRequestsLoading(false);
@@ -164,7 +192,6 @@ const User = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Update both allAccountRequests and filtered accountRequests
       const updatedRequests = allAccountRequests.map(request =>
         request._id === requestId
           ? { ...request, status: "verified" }
@@ -182,7 +209,6 @@ const User = () => {
   };
 
   const handleRejectAccountRequest = async (requestId) => {
-    console.log(requestId, "id deleted");
     try {
       const token = localStorage.getItem("token");
       await account.delete(`/${requestId}`, {
@@ -195,7 +221,7 @@ const User = () => {
     }
   };
 
-  // Funds action - Modified to show transactions modal
+  // Funds action
   const handleFundsAction = (userId) => {
     setSelectedUserId(userId);
     setIsTransactionsModalVisible(true);
@@ -249,6 +275,12 @@ const User = () => {
             onClick={() => handleAccountRequest(record.id)}
           >
             Account
+          </Button>
+          <Button
+            icon={<MailOutlined />}
+            onClick={() => handleSendEmail(record)}
+          >
+            Email
           </Button>
         </Space>
       ),
@@ -395,12 +427,6 @@ const User = () => {
                     </Tag>
                   ),
                 },
-                // {
-                //   title: 'Created At',
-                //   dataIndex: 'createdAt',
-                //   key: 'createdAt',
-                //   render: (date) => date ? new Date(date).toLocaleString() : 'N/A',
-                // },
                 {
                   title: 'Actions',
                   key: 'actions',
@@ -447,7 +473,72 @@ const User = () => {
         footer={null}
         width={1000}
       >
-        <Transactions userId={selectedUserId} /> {/* Pass the user ID to Transactions component */}
+        <Transactions userId={selectedUserId} />
+      </Modal>
+
+      {/* Email Modal */}
+      <Modal
+        title="Send Account Details"
+        visible={isEmailModalVisible}
+        onCancel={() => setIsEmailModalVisible(false)}
+        onOk={() => emailForm.submit()}
+        okText="Send Email"
+        cancelText="Cancel"
+        width={600}
+        footer={[
+          <Button key="cancel" onClick={() => setIsEmailModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            onClick={() => emailForm.submit()}
+          >
+            Send Email
+          </Button>
+        ]}
+      >
+        <Form
+          form={emailForm}
+          layout="vertical"
+          onFinish={sendAccountDetailsEmail}
+        >
+          <Form.Item
+            label="Recipient Email"
+            name="email"
+            rules={[{ required: true, message: 'Please input recipient email!', type: 'email' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Name"
+            name="name"
+            rules={[{ required: true, message: 'Please input name!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Username"
+            name="username"
+            rules={[{ required: true, message: 'Please input username!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Main Password"
+            name="mainPassword"
+            rules={[{ required: true, message: 'Please input main password!' }]}
+          >
+            <Input.Password />
+          </Form.Item>
+          <Form.Item
+            label="Invest Password"
+            name="investPassword"
+            rules={[{ required: true, message: 'Please input invest password!' }]}
+          >
+            <Input.Password />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
