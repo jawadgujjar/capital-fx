@@ -1,4 +1,6 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { jwtDecode } from "jwt-decode"; // ✅ Correct import (named export)
+import { useNavigate } from "react-router-dom";
 
 // Create AuthContext
 const AuthContext = createContext();
@@ -7,32 +9,70 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 // Encryption helper functions
-const encryptData = (data) => {
-  return btoa(data); // Base64 Encoding (lightweight encryption)
-};
-const decryptData = (data) => {
-  return atob(data); // Base64 Decoding
-};
+const encryptData = (data) => btoa(data);
+const decryptData = (data) => atob(data);
 
 export const AuthProvider = ({ children }) => {
+  const navigate = useNavigate();
+
   const [token, setToken] = useState(() => {
-    // Restore encrypted token from sessionStorage
     const encryptedToken = sessionStorage.getItem("authToken");
     return encryptedToken ? decryptData(encryptedToken) : null;
   });
 
-  // Login function (encrypt & store)
+  const logoutUser = () => {
+    sessionStorage.removeItem("authToken");
+    setToken(null);
+    alert("Session expired. Please log in again.");
+    navigate("/login"); // 👈 Redirect to login page
+  };
+
   const loginUser = (newToken) => {
     const encryptedToken = encryptData(newToken);
     sessionStorage.setItem("authToken", encryptedToken);
     setToken(newToken);
+
+    try {
+      const decoded = jwtDecode(newToken);
+      const expiryTime = decoded.exp * 1000;
+      const currentTime = Date.now();
+      const timeLeft = expiryTime - currentTime;
+
+      if (timeLeft <= 0) {
+        logoutUser();
+      } else {
+        setTimeout(() => {
+          logoutUser();
+        }, timeLeft);
+      }
+    } catch (error) {
+      console.error("Invalid token format", error);
+      logoutUser();
+    }
   };
 
-  // Logout function (remove token)
-  const logoutUser = () => {
-    sessionStorage.removeItem("authToken");
-    setToken(null);
-  };
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        const expiryTime = decoded.exp * 1000;
+        const currentTime = Date.now();
+        const timeLeft = expiryTime - currentTime;
+
+        if (timeLeft <= 0) {
+          logoutUser();
+        } else {
+          const timeout = setTimeout(() => {
+            logoutUser();
+          }, timeLeft);
+
+          return () => clearTimeout(timeout);
+        }
+      } catch (error) {
+        logoutUser();
+      }
+    }
+  }, [token]);
 
   return (
     <AuthContext.Provider value={{ token, loginUser, logoutUser }}>

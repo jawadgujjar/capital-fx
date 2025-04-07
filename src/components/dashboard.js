@@ -4,19 +4,8 @@ import {
   UserAddOutlined,
   BankOutlined,
   ArrowUpOutlined,
-  ArrowDownOutlined,
 } from "@ant-design/icons";
 import { Fade } from "react-awesome-reveal";
-import {
-  ResponsiveContainer,
-  BarChart,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  Bar,
-} from "recharts"; // Updated to BarChart
 import "./dashboard.css";
 
 const Dashboard = () => {
@@ -27,7 +16,6 @@ const Dashboard = () => {
     totalWithdraw: 32000, // Mock value for total withdraw
     totalFunds: 23000, // Mock value for total funds
   });
-
   useEffect(() => {
     // Simulate data update
     const fetchDashboardData = async () => {
@@ -68,12 +56,6 @@ const Dashboard = () => {
       icon: <ArrowUpOutlined />,
       color: "#2196F3",
     },
-    {
-      title: "Total Funds",
-      number: totalFunds,
-      icon: <ArrowDownOutlined />,
-      color: "#9C27B0",
-    },
   ];
 
   // Format currency using Intl.NumberFormat for display
@@ -97,7 +79,12 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       {/* Cards Section */}
-      <Row gutter={[16, 16]} justify="center" align="middle">
+      <Row
+        gutter={[16, 16]}
+        justify="center"
+        align="middle"
+        style={{ marginTop: "3rem" }}
+      >
         {data.map((item, index) => (
           <Col span={6} key={index}>
             <Fade direction="up" triggerOnce>
@@ -115,7 +102,8 @@ const Dashboard = () => {
                 <h3 className="dashboard-card-title">{item.title}</h3>
                 <Statistic
                   value={
-                    item.title === "Total Deposit" || item.title === "Total Funds"
+                    item.title === "Total Deposit" ||
+                    item.title === "Total Funds"
                       ? formatCurrency(item.number) // Format the value if it's financial data
                       : item.number
                   }
@@ -133,19 +121,6 @@ const Dashboard = () => {
 
       {/* Chart Section (Optional) */}
       {/* If you still want to include the chart */}
-      <div className="dashboard-chart" style={{ textAlign: "center" }}>
-        <h2>Analytics Overview</h2>
-        <ResponsiveContainer width="80%" height={300}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis domain={[0, maxValue * 1.2]} /> {/* Adjust Y-Axis scale */}
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="value" fill="#4CAF50" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
     </div>
   );
 };
