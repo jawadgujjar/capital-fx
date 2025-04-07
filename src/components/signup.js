@@ -1,54 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Card, Typography, Select } from "antd";
+import React, { useState } from "react";
+import { Form, Input, Button, Card, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import { signup } from "../utils/axios"; // Assuming this is your API call
 import { useAuth } from "../contextapi"; // Correctly using Auth Context
-import countryList from "react-select-country-list"; // Import Country List
 import { ToastContainer, toast } from "react-toastify";
 import "./signup.css"; // Import CSS file
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { loginUser } = useAuth(); // Get loginUser from context
   const [loading, setLoading] = useState(false);
-  const [countries, setCountries] = useState([]); // Country list
-  const [selectedCountry, setSelectedCountry] = useState(""); // Selected country
-  const [phoneCode, setPhoneCode] = useState(""); // Country Phone Code
-
-  // Load Country Data on Component Mount
-  useEffect(() => {
-    const countryOptions = countryList().getData();
-    setCountries(countryOptions);
-  }, []);
-
-  // Handle Country Change
-  const handleCountryChange = (value) => {
-    const selected = countries.find((c) => c.value === value);
-    setSelectedCountry(selected.label); // Store country name
-    setPhoneCode(getCountryPhoneCode(value)); // Update Phone Code
-  };
-
-  // Function to get country phone code based on country value
-  const getCountryPhoneCode = (countryCode) => {
-    const phoneCodes = {
-      US: "+1",
-      GB: "+44",
-      PK: "+92",
-      IN: "+91",
-      CA: "+1",
-      AU: "+61",
-      FR: "+33",
-      DE: "+49",
-      AE: "+971",
-      SA: "+966",
-      CN: "+86",
-      // Add more countries as needed
-    };
-    return phoneCodes[countryCode] || "+";
-  };
 
   const onFinish = async (values) => {
     console.log("Form values: ", values);
@@ -58,7 +21,6 @@ const SignupPage = () => {
       // Send request to API for signup
       const response = await signup.post("/register", {
         ...values,
-        country: selectedCountry,
         role: "admin", // Add the role as 'admin'
       });
 
@@ -116,63 +78,28 @@ const SignupPage = () => {
             />
           </Form.Item>
 
-          {/* Age */}
-          {/* <Form.Item
-            label={<Text className="signup-label">Age</Text>}
-            name="age"
-            rules={[
-              { required: true, message: "Please enter your age!" },
-              {
-                validator: (_, value) => {
-                  // Parse value to ensure it's a valid number
-                  const age = parseInt(value, 10);
-                  if (isNaN(age) || age <= 0) {
-                    return Promise.reject("Please enter a valid age!");
-                  }
-                  return Promise.resolve();
-                },
-              },
-            ]}
-          >
-            <Input
-              type="number"
-              placeholder="Enter your age"
-              className="signup-input"
-            />
-          </Form.Item> */}
-
-          {/* Country Dropdown */}
+          {/* Country Input (Manual Entry) */}
           <Form.Item
             label={<Text className="signup-label">Country</Text>}
             name="country"
-            rules={[{ required: true, message: "Please select your country!" }]}
+            rules={[{ required: true, message: "Please enter your country!" }]}
           >
-            <Select
-              placeholder="Select your country"
-              onChange={handleCountryChange}
-            >
-              {countries.map((country) => (
-                <Option key={country.value} value={country.value}>
-                  {country.label}
-                </Option>
-              ))}
-            </Select>
+            <Input placeholder="Enter your country" className="signup-input" />
           </Form.Item>
 
-          {/* Phone Number with Auto-Updating Country Code */}
+          {/* Phone Number Input (Manual Entry) */}
           <Form.Item
             label={<Text className="signup-label">Phone Number</Text>}
             name="phoneNumber"
             rules={[
               { required: true, message: "Please enter your phone number!" },
               {
-                pattern: /^\+?[1-9]\d{1,14}$/, // Regex pattern for international phone numbers
-                message: "Please enter a valid phone number!",
+                pattern: /^\d{11}$/,
+                message: "Phone number must be exactly 11 digits!",
               },
             ]}
           >
             <Input
-              addonBefore={phoneCode}
               placeholder="Enter your phone number"
               className="signup-input"
             />
