@@ -1,0 +1,56 @@
+.withdraw-requests-container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.error-message {
+    color: #d32f2f;
+    margin-bottom: 15px;
+}
+
+.withdraw-list {
+    list-style: none;
+    padding: 0;
+}
+
+.withdraw-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.withdraw-info {
+    flex-grow: 1;
+}
+
+.withdraw-info p {
+    margin: 5px 0;
+}
+
+.delete-button {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+}
+
+.delete-button:hover {
+    background: #cc0000;
+}
+
+.delete-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}

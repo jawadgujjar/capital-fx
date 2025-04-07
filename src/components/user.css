@@ -5,7 +5,10 @@
     margin-top: 20px;
     padding-right: 10px; /* Added padding to ensure smooth scrolling */
   }
-  
+  .ant-modal-footer {
+    display: flex !important;
+    padding: 16px 24px !important;
+  } 
   /* Adjust the width of the modal content */
   .modal-content {
     display: flex;
