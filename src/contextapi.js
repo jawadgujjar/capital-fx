@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { jwtDecode } from "jwt-decode"; // ✅ Correct import (named export)
-import { useNavigate } from "react-router-dom";
 
 // Create AuthContext
 const AuthContext = createContext();
@@ -13,8 +12,6 @@ const encryptData = (data) => btoa(data);
 const decryptData = (data) => atob(data);
 
 export const AuthProvider = ({ children }) => {
-  const navigate = useNavigate();
-
   const [token, setToken] = useState(() => {
     const encryptedToken = sessionStorage.getItem("authToken");
     return encryptedToken ? decryptData(encryptedToken) : null;
@@ -24,7 +21,6 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem("authToken");
     setToken(null);
     alert("Session expired. Please log in again.");
-    navigate("/login"); // 👈 Redirect to login page
   };
 
   const loginUser = (newToken) => {

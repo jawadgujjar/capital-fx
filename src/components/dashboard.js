@@ -7,35 +7,63 @@ import {
 } from "@ant-design/icons";
 import { Fade } from "react-awesome-reveal";
 import "./dashboard.css";
+import { depdraw, users } from "../utils/axios";
 
 const Dashboard = () => {
-  // Mocked data instead of fetching from API
-  const [dashboardData, setDashboardData] = useState({
-    totalUsers: 1200, // Mock value for users
-    totalDeposit: 55000, // Mock value for total deposit
-    totalWithdraw: 32000, // Mock value for total withdraw
-    totalFunds: 23000, // Mock value for total funds
-  });
-  useEffect(() => {
-    // Simulate data update
-    const fetchDashboardData = async () => {
-      // Mocking the API data for this example
-      const totalUsers = 1200;
-      const totalDeposit = 55000;
-      const totalWithdraw = 32000;
-      const totalFunds = 23000;
+  // Individual states
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalDeposit, setTotalDeposit] = useState(0);
+  const [totalWithdraw, setTotalWithdraw] = useState(0);
 
-      setDashboardData({ totalUsers, totalDeposit, totalWithdraw, totalFunds });
-      localStorage.setItem("totalUsers", totalUsers);
-      localStorage.setItem("totalDeposit", totalDeposit);
-      localStorage.setItem("totalWithdraw", totalWithdraw);
-      localStorage.setItem("totalFunds", totalFunds);
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      const token = localStorage.getItem("token");
+
+      try {
+        // Get all users
+        const usersRes = await users.get("/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const usersList = usersRes.data?.results || [];
+        const filteredUsers = usersList.filter((user) => user.role === "user");
+        setTotalUsers(filteredUsers.length);
+
+        // Get deposits and withdrawals
+        const depdrawsRes = await depdraw.get("/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        let deposit = 0;
+        let withdraw = 0;
+
+        (depdrawsRes.data?.results || []).forEach((item) => {
+          if (item.deposit) deposit += item.deposit;
+          if (item.withdraw) withdraw += item.withdraw;
+        });
+
+        setTotalDeposit(deposit);
+        setTotalWithdraw(withdraw);
+
+        // Optional localStorage if needed
+        localStorage.setItem("totalUsers", filteredUsers.length);
+        localStorage.setItem("totalDeposit", deposit);
+        localStorage.setItem("totalWithdraw", withdraw);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
     };
 
     fetchDashboardData();
   }, []);
 
-  const { totalUsers, totalDeposit, totalWithdraw, totalFunds } = dashboardData;
+  const formatCurrency = (number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(number);
+  };
 
   const data = [
     {
@@ -58,27 +86,8 @@ const Dashboard = () => {
     },
   ];
 
-  // Format currency using Intl.NumberFormat for display
-  const formatCurrency = (number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0, // Adjust the number of decimal places as needed
-    }).format(number);
-  };
-
-  // Bar Chart Data from Cards
-  const chartData = data.map((item) => ({
-    name: item.title,
-    value: item.number,
-  }));
-
-  // Get maximum value for scaling
-  const maxValue = Math.max(...chartData.map((item) => item.value));
-
   return (
     <div className="dashboard-container">
-      {/* Cards Section */}
       <Row
         gutter={[16, 16]}
         justify="center"
@@ -102,9 +111,9 @@ const Dashboard = () => {
                 <h3 className="dashboard-card-title">{item.title}</h3>
                 <Statistic
                   value={
-                    item.title === "Total Deposit" ||
-                    item.title === "Total Funds"
-                      ? formatCurrency(item.number) // Format the value if it's financial data
+                    item.title.includes("Deposit") ||
+                    item.title.includes("Withdraw")
+                      ? formatCurrency(item.number)
                       : item.number
                   }
                   valueStyle={{
@@ -118,9 +127,6 @@ const Dashboard = () => {
           </Col>
         ))}
       </Row>
-
-      {/* Chart Section (Optional) */}
-      {/* If you still want to include the chart */}
     </div>
   );
 };
