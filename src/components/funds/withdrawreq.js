@@ -8,6 +8,7 @@ function Withdrawreq({ userId }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
+    const [rejectingId, setRejectingId] = useState(null); // For reject button loading
 
     const fetchWithdrawals = async () => {
         try {
@@ -64,6 +65,21 @@ function Withdrawreq({ userId }) {
         }
     };
 
+    const handleReject = async (withdrawalId) => {
+        try {
+            setRejectingId(withdrawalId);
+            await withdraw.patch(`/${withdrawalId}`, {
+                status: 'rejected',
+            });
+            await fetchWithdrawals(); // Refresh the list after rejection
+        } catch (err) {
+            console.error('Reject error:', err);
+            setError('Failed to reject withdrawal request. Please try again.');
+        } finally {
+            setRejectingId(null);
+        }
+    };
+
     if (loading) return <div>Loading withdrawal requests...</div>;
 
     return (
@@ -86,13 +102,23 @@ function Withdrawreq({ userId }) {
                                 <p><strong>Created At:</strong> {new Date(withdrawal.createdAt).toLocaleString()}</p>
                                 <p><strong>Status:</strong> {withdrawal.status || 'Pending'}</p>
                             </div>
-                            <button
-                                className="delete-button"
-                                onClick={() => handleDelete(withdrawal._id)}
-                                disabled={deletingId === withdrawal._id}
-                            >
-                                {deletingId === withdrawal._id ? 'Deleting...' : <FaTrash />}
-                            </button>
+                            <div className="action-buttons">
+                                <button
+                                    className="delete-button"
+                                    onClick={() => handleDelete(withdrawal._id)}
+                                    disabled={deletingId === withdrawal._id}
+                                >
+                                    {deletingId === withdrawal._id ? 'Deleting...' : <FaTrash />}
+                                </button>
+
+                                <button
+                                    className="reject-button"
+                                    onClick={() => handleReject(withdrawal._id)}
+                                    disabled={rejectingId === withdrawal._id || withdrawal.status === 'rejected'}
+                                >
+                                    {rejectingId === withdrawal._id ? 'Rejecting...' : 'Reject'}
+                                </button>
+                            </div>
                         </li>
                     ))}
                 </ul>

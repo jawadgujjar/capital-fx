@@ -19,11 +19,13 @@ import {
   IdcardOutlined,
   CheckOutlined,
   CloseOutlined,
-  MailOutlined
+  MailOutlined,
+  DeleteOutlined
 } from "@ant-design/icons";
 import { users, kyc, account } from "../utils/axios";
 import Transactions from "./transactions";
 import "./user.css";
+import { toast } from "react-toastify";
 
 const User = () => {
   const [data, setData] = useState([]);
@@ -145,27 +147,28 @@ const User = () => {
     }
   };
 
-  const handleVerifyKyc = async () => {
+  const updateKycStatus = async (newStatus) => {
     try {
       const token = localStorage.getItem("token");
       await kyc.patch(
         `/${selectedUserId}`,
-        { status: "verified" },
+        { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setData(data.map(user =>
         user.id === selectedUserId
-          ? { ...user, kyc: { ...user.kyc, status: "verified" } }
+          ? { ...user, kyc: { ...user.kyc, status: newStatus } }
           : user
       ));
 
-      setSelectedUserKyc({ ...selectedUserKyc, status: "verified" });
-      message.success("KYC verified successfully");
+      setSelectedUserKyc({ ...selectedUserKyc, status: newStatus });
+      message.success(`KYC ${newStatus === "verified" ? "verified" : "rejected"} successfully`);
     } catch (error) {
-      message.error("Failed to verify KYC");
+      message.error(`Failed to ${newStatus === "verified" ? "verify" : "reject"} KYC`);
     }
   };
+
 
   // Account Request Actions
   const handleAccountRequest = (userId) => {
@@ -227,7 +230,27 @@ const User = () => {
     setIsTransactionsModalVisible(true);
     message.info(`Showing transactions for user ID: ${userId}`);
   };
+  const handleDeleteKyc = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await kyc.delete(`/${selectedUserId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
+      // Remove user from data list
+      setData(data.filter(user => user.id !== selectedUserId));
+
+      // Clear selected KYC
+      setSelectedUserKyc(null);
+
+      // ✅ This will now show properly
+      message.success("KYC deleted successfully");
+      // 🔄 Optionally force reload if needed
+      window.location.reload();
+    } catch (error) {
+      message.error("Failed to delete KYC");
+    }
+  };
   // Table columns
   const columns = [
     {
@@ -348,15 +371,38 @@ const User = () => {
                 <CheckOutlined /> KYC Verified
               </Tag>
             ) : (
-              <Button
-                type="primary"
-                onClick={handleVerifyKyc}
-                icon={<CheckOutlined />}
-                style={{ marginTop: 16 }}
-              >
-                Verify KYC
-              </Button>
+              <>
+                <Button
+                  type="primary"
+                  onClick={() => updateKycStatus("verified")}
+                  icon={<CheckOutlined />}
+                  style={{ marginTop: 16, marginRight: 8 }}
+                >
+                  Verify KYC
+                </Button>
+                <Button
+                  type="default"
+                  danger
+                  onClick={() => updateKycStatus("rejected")}
+                  icon={<DeleteOutlined />}
+                  style={{ marginTop: 16, marginRight: 8 }}
+                >
+                  Reject KYC
+                </Button>
+              </>
             )}
+
+            {/* 🟠 Delete button always visible */}
+            <Button
+              type="text"
+              danger
+              onClick={handleDeleteKyc}
+              icon={<DeleteOutlined />}
+              style={{ marginTop: 16 }}
+            >
+              Delete KYC
+            </Button>
+
           </div>
         ) : (
           <p>No KYC data available for this user</p>
