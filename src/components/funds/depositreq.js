@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { deposit } from '../../utils/axios';
-import { FaTrash } from 'react-icons/fa'; // Import delete icon
-import "./depreq.css"
+import { FaTrash } from 'react-icons/fa';
+import "./depreq.css";
 
 function Depositreq({ userId }) {
     const [deposits, setDeposits] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [deletingId, setDeletingId] = useState(null); // Track which item is being deleted
+    const [deletingId, setDeletingId] = useState(null);
+    const [rejectingId, setRejectingId] = useState(null); // for reject button loading
 
     const fetchDeposits = async () => {
         try {
@@ -15,10 +16,7 @@ function Depositreq({ userId }) {
             setError(null);
 
             const response = await deposit.get(`/user/${userId}`);
-
-            // Ensure we always have an array, even if empty
-            const data = Array.isArray(response.data) ? response.data :
-                response.data ? [response.data] : [];
+            const data = Array.isArray(response.data) ? response.data : response.data ? [response.data] : [];
 
             setDeposits(data);
 
@@ -51,8 +49,6 @@ function Depositreq({ userId }) {
         try {
             setDeletingId(depositId);
             await deposit.delete(`/${depositId}`);
-
-            // Refresh the list after successful deletion
             await fetchDeposits();
         } catch (err) {
             console.error('Delete error:', err);
@@ -62,14 +58,26 @@ function Depositreq({ userId }) {
         }
     };
 
-    // Render loading state
+    const handleReject = async (depositId) => {
+        try {
+            setRejectingId(depositId);
+            await deposit.patch(`/${depositId}`, {
+                status: 'rejected',
+            });
+            await fetchDeposits();
+        } catch (err) {
+            console.error('Reject error:', err);
+            setError('Failed to reject deposit request. Please try again.');
+        } finally {
+            setRejectingId(null);
+        }
+    };
+
     if (loading) return <div>Loading deposit requests...</div>;
 
     return (
         <div className="deposit-requests-container">
             <h3>Deposit Requests</h3>
-
-            {/* Show error message but still display any available data */}
             {error && <div className="error-message">{error}</div>}
 
             {deposits.length > 0 ? (
@@ -79,6 +87,7 @@ function Depositreq({ userId }) {
                             <div className="deposit-info">
                                 <p><strong>Amount:</strong> {deposit.amount}</p>
                                 <p><strong>Trading Account ID:</strong> {deposit.tradingAccountId}</p>
+                                <p><strong>Status:</strong> {deposit.status}</p>
                                 <p><strong>Created At:</strong> {new Date(deposit.createdAt).toLocaleString()}</p>
                                 {deposit.image && (
                                     <>
@@ -88,13 +97,23 @@ function Depositreq({ userId }) {
                                     </>
                                 )}
                             </div>
-                            <button
-                                className="delete-button"
-                                onClick={() => handleDelete(deposit._id)}
-                                disabled={deletingId === deposit._id}
-                            >
-                                {deletingId === deposit._id ? 'Deleting...' : <FaTrash />}
-                            </button>
+                            <div className="action-buttons">
+                                <button
+                                    className="delete-button"
+                                    onClick={() => handleDelete(deposit._id)}
+                                    disabled={deletingId === deposit._id}
+                                >
+                                    {deletingId === deposit._id ? 'Deleting...' : <FaTrash />}
+                                </button>
+
+                                <button
+                                    className="reject-button"
+                                    onClick={() => handleReject(deposit._id)}
+                                    disabled={rejectingId === deposit._id || deposit.status === 'rejected'}
+                                >
+                                    {rejectingId === deposit._id ? 'Rejecting...' : 'Reject'}
+                                </button>
+                            </div>
                         </li>
                     ))}
                 </ul>

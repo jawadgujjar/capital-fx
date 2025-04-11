@@ -39,7 +39,25 @@
     align-items: center;
     justify-content: center;
 }
-
+.action-buttons{
+    display: flex;
+    gap: 1rem;
+}
+.reject-button {
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    margin-left: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .reject-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
 .delete-button:hover {
     background: #cc0000;
 }
