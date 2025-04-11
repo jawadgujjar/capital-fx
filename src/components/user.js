@@ -20,7 +20,8 @@ import {
   CheckOutlined,
   CloseOutlined,
   MailOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  UserDeleteOutlined
 } from "@ant-design/icons";
 import { users, kyc, account } from "../utils/axios";
 import Transactions from "./transactions";
@@ -251,6 +252,23 @@ const User = () => {
       message.error("Failed to delete KYC");
     }
   };
+  const handleAccountDelete = async (record) => {
+    try {
+      const token = localStorage.getItem("token");
+      console.log(record)
+      await users.delete(`/${record}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Remove user from data list
+      setData(data.filter(user => user.id !== record));
+      message.success("User account deleted successfully");
+      window.location.reload(); // Optional reload
+    } catch (error) {
+      console.error("Account delete error:", error);
+      message.error("Failed to delete user account");
+    }
+  };
   // Table columns
   const columns = [
     {
@@ -304,6 +322,11 @@ const User = () => {
             onClick={() => handleSendEmail(record)}
           >
             Email
+          </Button>
+          <Button
+            onClick={() => handleAccountDelete(record.id)}
+          >
+            <UserDeleteOutlined style={{color:"red"}}/>
           </Button>
         </Space>
       ),
