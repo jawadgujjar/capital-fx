@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { helpdesk } from '../utils/axios'; // Assuming you have the axios instance set up for 'helpdesk'
-import { Card, Button, List, Typography, Row, Col } from 'antd';
-import { MailOutlined } from '@ant-design/icons';
+import { helpdesk } from '../utils/axios'; // Axios instance
+import { Card, Button, Row, Col, Typography, Popconfirm, message as AntMessage } from 'antd';
+import { MailOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -10,21 +10,30 @@ function Helpdesk() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchMessages = async () => {
-            try {
-                // Fetch the messages from the helpdesk API
-                const response = await helpdesk.get('/');  // Assuming the endpoint to fetch messages
-                setMessages(response.data);
-            } catch (err) {
-                setError('Failed to fetch helpdesk messages');
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchMessages = async () => {
+        try {
+            const response = await helpdesk.get('/');
+            setMessages(response.data);
+        } catch (err) {
+            setError('Failed to fetch helpdesk messages');
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchMessages();
     }, []);
+
+    const handleDelete = async (id) => {
+        try {
+            await helpdesk.delete(`/${id}`);
+            setMessages((prevMessages) => prevMessages.filter((msg) => msg._id !== id));
+            AntMessage.success('Message deleted successfully');
+        } catch (error) {
+            AntMessage.error('Failed to delete the message');
+        }
+    };
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>{error}</div>;
@@ -36,10 +45,9 @@ function Helpdesk() {
                 Helpdesk Messages
             </Title>
 
-            {/* Creating two cards per row */}
             <Row gutter={16}>
-                {messages.map((message, index) => (
-                    <Col key={index} xs={24} sm={12} md={12} lg={12} xl={12}>
+                {messages.map((message) => (
+                    <Col key={message._id} xs={24} sm={12} md={12} lg={12} xl={12}>
                         <Card
                             title={<Text strong>{`Message from: ${message.email}`}</Text>}
                             bordered={false}
@@ -51,18 +59,29 @@ function Helpdesk() {
                                 marginBottom: '15px',
                             }}
                             extra={
-                                <Button
-                                    type="primary"
-                                    icon={<MailOutlined />}
-                                    href={`mailto:${message.email}?subject=Helpdesk Query&body=Your message here...`}
-                                    target="_blank"
-                                    style={{
-                                        borderRadius: '5px',
-                                        boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)',
-                                    }}
-                                >
-                                    Send Email
-                                </Button>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <Button
+                                        type="primary"
+                                        icon={<MailOutlined />}
+                                        href={`mailto:${message.email}?subject=Helpdesk Query&body=Your message here...`}
+                                        target="_blank"
+                                    >
+                                        Send Email
+                                    </Button>
+                                    <Popconfirm
+                                        title="Are you sure to delete this message?"
+                                        onConfirm={() => handleDelete(message._id)}
+                                        okText="Yes"
+                                        cancelText="No"
+                                    >
+                                        <Button
+                                            danger
+                                            icon={<DeleteOutlined />}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </Popconfirm>
+                                </div>
                             }
                         >
                             <Text strong style={{ display: 'block', marginBottom: '10px' }}>

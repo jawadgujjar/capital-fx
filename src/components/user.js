@@ -326,7 +326,7 @@ const User = () => {
           <Button
             onClick={() => handleAccountDelete(record.id)}
           >
-            <UserDeleteOutlined style={{color:"red"}}/>
+            <DeleteOutlined style={{color:"red"}}/>
           </Button>
         </Space>
       ),
