@@ -90,7 +90,7 @@ const SignupPage = () => {
           {/* Phone Number Input (Manual Entry) */}
           <Form.Item
             label={<Text className="signup-label">Phone Number</Text>}
-            name="phoneNumber"
+            name="phonenumber"
             rules={[
               { required: true, message: "Please enter your phone number!" },
               {

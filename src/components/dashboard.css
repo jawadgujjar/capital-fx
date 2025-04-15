@@ -1,126 +1,130 @@
 /* Dashboard Container */
 .dashboard-container {
-    display: flex;                   /* Enable flexbox */
-    flex-direction: column;           /* Stack content vertically */
-    justify-content: flex-start;      /* Align content to the top */
-    align-items: center;              /* Center content horizontally */
-    height: 100vh;                    /* Full height of the viewport */
-    background-color: #ecf0f1;        /* Light background color */
-    padding: 20px;                    /* Add padding for spacing */
-    box-sizing: border-box;           /* Ensure padding doesn't affect size */
-    width: 100%;                      /* Take up the full width */
-  }
-  
-  /* Cards Section */
-  .dashboard-container .ant-row {
-    display: flex;                    /* Use flexbox for rows */
-    justify-content: center;           /* Center the cards horizontally */
-    gap: 20px;                         /* Add spacing between cards */
-    flex-wrap: wrap;                   /* Wrap cards on smaller screens */
-    width: 100%;                       /* Take up full width */
-  }
-  
-  /* Dashboard Card */
-  .dashboard-card {
-    background: #fff;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-    width: 100%;                      /* Ensure cards take full width */
-    max-width: 320px;                 /* Limit card width to 320px */
-  }
-  
-  /* Hover Effect for Cards */
-  .dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  }
-  
-  /* Title of Each Card */
-  .dashboard-card-title {
-    font-size: 18px;
-    margin-top: 10px;
-    color: #333; /* Dark color for the card title */
-  }
-  
-  /* Icon Style for Each Card */
-  .dashboard-card-icon {
-    font-size: 30px;
-    margin-bottom: 10px;
-    color: #FFA015; /* Orange color for the icons */
-  }
-  
-  /* Card Value Style */
-  .dashboard-card .ant-statistic-content-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #333; /* Color for the values */
-  }
-  
-  /* Chart Section Styling */
-  .dashboard-chart {
-    margin-top: 30px;
-    background: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    width: 100%;                       /* Ensure chart width is responsive */
-    max-width: 1000px;                  /* Limit the chart width on large screens */
-  }
-  
-  /* Chart Title */
-  .dashboard-chart h2 {
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 24px;
-    color: #333; /* Dark color for the title */
-  }
-  
-  /* Bar Chart Style */
-  .recharts-wrapper .recharts-bar-rectangles .recharts-bar-rectangle {
-    fill: #FFA015; /* Orange color for the bars in the chart */
-  }
-  
-  /* Responsive Layout for smaller screens */
-  @media (max-width: 768px) {
-    .dashboard-container {
-      padding: 10px; /* Reduce padding for smaller screens */
-    }
-  
-    /* Cards Section */
-    .dashboard-container .ant-row {
-      gap: 15px; /* Reduce gap between cards */
-    }
-  
-    /* Ensure cards stack properly */
-    .dashboard-container .ant-col {
-      flex: 1 1 100%; /* Allow each column to take full width */
-      max-width: 100%; /* Ensure full-width cards on small screens */
-    }
-  
-    /* Chart Section */
-    .dashboard-chart {
-      width: 100%;    /* Ensure the chart is fully responsive */
-      max-width: 100%; /* Ensure full width on smaller screens */
-    }
-  }
-  
-  /* Center Align Cards */
-  .ant-row {
-    justify-content: center;
-    align-items: center;
-  }
-  
-  /* Center Align all content */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  height: 100vh;
+  background-color: #0e0e0e;
+  /* Deep Black */
+  padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Cards Section */
+.dashboard-container .ant-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Dashboard Card */
+.dashboard-card {
+  background: #1a1a1a;
+  /* Dark Card */
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.15);
+  /* Golden glow */
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.4s ease-in-out;
+  width: 100%;
+  max-width: 320px;
+  padding: 20px;
+}
+
+/* Hover Effect for Cards */
+.dashboard-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 25px rgba(255, 215, 0, 0.3);
+}
+
+/* Title of Each Card */
+.dashboard-card-title {
+  font-size: 20px;
+  margin-top: 10px;
+  color: #ffffff;
+  /* White text */
+  text-align: center;
+}
+
+/* Icon Style for Each Card */
+.dashboard-card-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  color: #FFD700;
+  /* Golden */
+  text-align: center;
+}
+
+/* Card Value Style */
+.dashboard-card .ant-statistic-content-value {
+  font-size: 26px;
+  font-weight: 600;
+  color: #ffffff;
+  /* White value */
+  text-align: center;
+}
+
+/* Chart Section Styling */
+.dashboard-chart {
+  margin-top: 30px;
+  background: #1a1a1a;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.15);
+  width: 100%;
+  max-width: 1000px;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+/* Chart Title */
+.dashboard-chart h2 {
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 24px;
+  color: #FFD700;
+}
+
+/* Bar Chart Style */
+.recharts-wrapper .recharts-bar-rectangles .recharts-bar-rectangle {
+  fill: #FFD700;
+  /* Golden bars */
+}
+
+/* Responsive Layout for smaller screens */
+@media (max-width: 768px) {
   .dashboard-container {
-    display: flex;
-    justify-content: flex-start;     /* Align the items to the top */
-    flex-direction: column;
-    align-items: center;
-    width: 100%;                     /* Take full width */
-    margin: 0 auto;                  /* Center the container horizontally */
-    max-width: 1200px;                /* Max width for large screens */
-    box-sizing: border-box;
+    padding: 10px;
   }
-  
+
+  .dashboard-container .ant-row {
+    gap: 15px;
+  }
+
+  .dashboard-container .ant-col {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .dashboard-chart {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Center Align Cards */
+.ant-row {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Limit dashboard width */
+.dashboard-container {
+  margin: 0 auto;
+  max-width: 1200px;
+}
