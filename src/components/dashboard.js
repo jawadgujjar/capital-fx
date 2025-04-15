@@ -7,13 +7,12 @@ import {
 } from "@ant-design/icons";
 import { Fade } from "react-awesome-reveal";
 import "./dashboard.css";
-import { depdraw, users } from "../utils/axios";
+import { users, deposit, withdraw } from "../utils/axios";
 
 const Dashboard = () => {
-  // Individual states
   const [totalUsers, setTotalUsers] = useState(0);
-  const [totalDeposit, setTotalDeposit] = useState(0);
-  const [totalWithdraw, setTotalWithdraw] = useState(0);
+  const [totalDepositCount, setTotalDepositCount] = useState(0);
+  const [totalWithdrawCount, setTotalWithdrawCount] = useState(0);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -29,26 +28,26 @@ const Dashboard = () => {
         const filteredUsers = usersList.filter((user) => user.role === "user");
         setTotalUsers(filteredUsers.length);
 
-        // Get deposits and withdrawals
-        const depdrawsRes = await depdraw.get("/", {
+        // Get deposit count
+        const depositRes = await deposit.get("/", {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log(depositRes, "request")
+        const depositList = depositRes.data || [];
+        setTotalDepositCount(depositList.length);
 
-        let deposit = 0;
-        let withdraw = 0;
-
-        (depdrawsRes.data?.results || []).forEach((item) => {
-          if (item.deposit) deposit += item.deposit;
-          if (item.withdraw) withdraw += item.withdraw;
+        // Get withdraw count
+        const withdrawRes = await withdraw.get("/", {
+          headers: { Authorization: `Bearer ${token}` },
         });
+        console.log(withdrawRes, "withdrawrequest")
+        const withdrawList = withdrawRes.data || [];
+        setTotalWithdrawCount(withdrawList.length);
 
-        setTotalDeposit(deposit);
-        setTotalWithdraw(withdraw);
-
-        // Optional localStorage if needed
+        // Store in localStorage (optional)
         localStorage.setItem("totalUsers", filteredUsers.length);
-        localStorage.setItem("totalDeposit", deposit);
-        localStorage.setItem("totalWithdraw", withdraw);
+        localStorage.setItem("totalDepositCount", depositList.length);
+        localStorage.setItem("totalWithdrawCount", withdrawList.length);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       }
@@ -56,14 +55,6 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, []);
-
-  const formatCurrency = (number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(number);
-  };
 
   const data = [
     {
@@ -73,14 +64,14 @@ const Dashboard = () => {
       color: "#FF9800",
     },
     {
-      title: "Total Deposit",
-      number: totalDeposit,
+      title: "Deposit Requests",
+      number: totalDepositCount,
       icon: <BankOutlined />,
       color: "#4CAF50",
     },
     {
-      title: "Total Withdraw",
-      number: totalWithdraw,
+      title: "Withdraw Requests",
+      number: totalWithdrawCount,
       icon: <ArrowUpOutlined />,
       color: "#2196F3",
     },
@@ -110,12 +101,7 @@ const Dashboard = () => {
                 <div className="dashboard-card-icon">{item.icon}</div>
                 <h3 className="dashboard-card-title">{item.title}</h3>
                 <Statistic
-                  value={
-                    item.title.includes("Deposit") ||
-                    item.title.includes("Withdraw")
-                      ? formatCurrency(item.number)
-                      : item.number
-                  }
+                  value={item.number}
                   valueStyle={{
                     fontSize: "24px",
                     fontWeight: "bold",
