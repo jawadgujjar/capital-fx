@@ -21,12 +21,10 @@ import {
   CloseOutlined,
   MailOutlined,
   DeleteOutlined,
-  UserDeleteOutlined
 } from "@ant-design/icons";
 import { users, kyc, account } from "../utils/axios";
 import Transactions from "./transactions";
 import "./user.css";
-import { toast } from "react-toastify";
 
 const User = () => {
   const [data, setData] = useState([]);
@@ -326,7 +324,7 @@ const User = () => {
           <Button
             onClick={() => handleAccountDelete(record.id)}
           >
-            <DeleteOutlined style={{color:"red"}}/>
+            <DeleteOutlined style={{ color: "red" }} />
           </Button>
         </Space>
       ),

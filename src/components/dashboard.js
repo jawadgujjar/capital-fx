@@ -61,19 +61,19 @@ const Dashboard = () => {
       title: "Total Users",
       number: totalUsers,
       icon: <UserAddOutlined />,
-      color: "#FF9800",
+      color: "transparent",
     },
     {
       title: "Deposit Requests",
       number: totalDepositCount,
       icon: <BankOutlined />,
-      color: "#4CAF50",
+      color: "transparent",
     },
     {
       title: "Withdraw Requests",
       number: totalWithdrawCount,
       icon: <ArrowUpOutlined />,
-      color: "#2196F3",
+      color: "transparent",
     },
   ];
 

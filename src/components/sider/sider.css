@@ -1,141 +1,160 @@
 /* Sidebar Styling */
 .sider {
     width: 250px;
-    background-color: white; /* Set sidebar background color to white */
-    color: black; /* Change text color to black for better contrast */
-    padding-top: 20px;
+    background-color: #0f0f0f;
+    /* Rich black */
+    color: #ffffff;
+    padding-top: 24px;
     position: fixed;
-    height: 100vh;
-    box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.1);
+    height: 95vh;
+    box-shadow: 4px 0px 20px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease-in-out; /* Smooth transition for sidebar visibility */
-    overflow: hidden; /* Prevent sidebar from having unnecessary scroll */
+    transition: transform 0.4s ease-in-out;
+    overflow: hidden;
+    /* border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px; */
+    z-index: 1000;
+    font-family: 'Poppins', sans-serif;
 }
 
 /* Sidebar header */
 .sider-header {
     text-align: center;
-    margin-bottom: 20px;
-    background-color: #f0f0f0; /* Set background color to gray */
-    padding: 10px 0; /* Optional: adds some padding around the header */
+    margin-bottom: 24px;
+    background-color: #1a1a1a;
+    padding: 16px 0;
+    font-weight: 600;
+    font-size: 20px;
+    color: #FFD700;
+    /* Golden */
+    border-bottom: 1px solid #2c2c2c;
+    letter-spacing: 1px;
 }
 
 /* Sidebar links */
 .sider-links {
-    overflow-y: auto; /* Enable vertical scrolling */
-    flex-grow: 1; /* Allow the links to take available space */
-    padding-bottom: 20px; /* Optional: for some spacing at the bottom */
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 0 12px 24px;
 }
 
 /* Sidebar links styling */
 .sider-links a {
     display: block;
-    color: black; /* Set text color to black */
+    color: #ffffff;
     text-decoration: none;
-    padding: 12px 20px;
-    font-size: 18px;
-    transition: background-color 0.3s ease, color 0.3s ease; /* Add color transition */
+    padding: 14px 18px;
+    font-size: 16.5px;
+    margin: 8px 0;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
 }
 
 /* Hover effect on sidebar links */
 .sider-links a:hover {
-    background-color: #FFA015; /* Change background to #FFA015 on hover */
-    color: white; /* Change text color to white on hover */
+    background-color: #FFD700;
+    color: #000;
+    transform: translateX(6px);
 }
 
 /* Active link styling */
 .sider-links a.active {
-    background-color: #FFA015; /* Active link background color */
-    color: white; /* Active link text color */
+    background-color: #FFD700;
+    color: #000000;
 }
 
 /* Logout button styling */
 .logout-btn {
-    background-color: #d13636; /* Set logout button background color to red */
-    color: white;
-    border: none;
+    background-color: transparent;
+    color: #FFD700;
+    border: 1px solid #FFD700;
     padding: 12px;
-    width: 100%;
-    margin-bottom: 3rem; /* Added margin-bottom of 1rem */
-    font-size: 18px;
+    width: 90%;
+    margin: 0 auto 2rem auto;
+    font-size: 17px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
-/* Hover effect on logout button */
 .logout-btn:hover {
-    background-color: rgb(177, 53, 53); /* Darken red color on hover */
+    background-color: #FFD700;
+    color: black;
+    transform: scale(1.03);
 }
 
 /* Main content layout */
 .main-content {
     margin-left: 250px;
-    padding: 20px;
+    padding: 28px;
     width: calc(100% - 250px);
-    font-family: Arial, sans-serif;
-    transition: margin-left 0.3s ease-in-out; /* Smooth transition when sidebar changes */
-    overflow-x: hidden; /* Prevent horizontal scroll */
-    overflow-y: auto; /* Allow vertical scrolling when needed */
+    font-family: 'Poppins', sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff !important;
+    transition: margin-left 0.3s ease-in-out;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* Content heading styling */
 .content-heading {
-    font-size: 28px;
-    color: #333;
-    margin-bottom: 20px;
+    font-size: 30px;
+    color: white !important;
+    margin-bottom: 24px;
+    font-weight: 600;
     text-transform: capitalize;
 }
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
-    /* Admin portal layout for small screens */
     .admin-portal {
         flex-direction: column;
     }
 
-    /* Sidebar adjustment for small screens */
     .sider {
         width: 100%;
         height: auto;
-        position: static;
-        transform: translateX(-100%); /* Initially hide sidebar */
-        box-shadow: none; /* Remove shadow on smaller screens */
-        overflow: hidden; /* Prevent scroll on sidebar */
+        position: fixed;
+        top: 0;
+        left: 0;
+        transform: translateX(-100%);
+        box-shadow: none;
+        border-radius: 0;
+        z-index: 999;
     }
 
-    /* Adjust main content layout on mobile */
     .main-content {
         margin-left: 0;
         width: 100%;
-        padding: 10px;
-        overflow-y: auto; /* Ensure content is scrollable vertically, but no horizontal scroll */
+        padding: 16px;
     }
 
-    /* Sidebar toggle button */
     .sidebar-toggle-btn {
         display: block;
-        background-color: #FFA015;
-        color: white;
+        background-color: #FFD700;
+        color: #0f0f0f;
         border: none;
-        padding: 10px;
+        padding: 10px 16px;
         font-size: 18px;
         cursor: pointer;
-        margin: 10px;
+        margin: 10px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 
-    /* Show sidebar when it's toggled */
     .sider.open {
-        transform: translateX(0); /* Slide in the sidebar */
+        transform: translateX(0);
     }
 
-    /* Hide sidebar links on mobile by default */
     .sider-links {
-        display: none; /* Hide links by default */
+        display: none;
     }
 
-    /* Toggle sidebar visibility */
     .sider.open .sider-links {
-        display: block; /* Show links when sidebar is open */
+        display: block;
     }
 }
