@@ -21,6 +21,7 @@ import {
   CloseOutlined,
   MailOutlined,
   DeleteOutlined,
+  SearchOutlined
 } from "@ant-design/icons";
 import { users, kyc, account } from "../utils/axios";
 import Transactions from "./transactions";
@@ -28,6 +29,7 @@ import "./user.css";
 
 const User = () => {
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]); // New state for filtered data
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isKycModalVisible, setIsKycModalVisible] = useState(false);
@@ -39,6 +41,19 @@ const User = () => {
   const [allAccountRequests, setAllAccountRequests] = useState([]);
   const [accountRequestsLoading, setAccountRequestsLoading] = useState(false);
   const [emailForm] = Form.useForm();
+  const [searchText, setSearchText] = useState(""); // State for search text
+
+  // Filter data based on search text
+  useEffect(() => {
+    if (searchText) {
+      const filtered = data.filter(user =>
+        user.email.toLowerCase().includes(searchText.toLowerCase())
+      );
+      setFilteredData(filtered);
+    } else {
+      setFilteredData(data);
+    }
+  }, [searchText, data]);
 
   // Fetch all users data and account requests
   useEffect(() => {
@@ -87,6 +102,7 @@ const User = () => {
         );
 
         setData(regularUsers);
+        setFilteredData(regularUsers); // Initialize filteredData with all data
       } catch (error) {
         message.error("Failed to load data");
       } finally {
@@ -333,10 +349,23 @@ const User = () => {
 
   return (
     <div className="user-management-container">
-      <Card title="User Management" bordered={false}>
+      <Card
+        title="User Management"
+        bordered={false}
+        extra={
+          <Input
+            placeholder="Search by email"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+            allowClear
+          />
+        }
+      >
         <Table
           columns={columns}
-          dataSource={data}
+          dataSource={filteredData} // Use filteredData instead of data
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
