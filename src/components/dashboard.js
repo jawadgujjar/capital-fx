@@ -43,7 +43,6 @@ const Dashboard = () => {
         const depositUserEmails = await Promise.all(
           depositList.map(async (item) => {
             try {
-              console.log(item, "depositidsss")
               const userRes = await users.get(`/${item.user}`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
@@ -67,10 +66,10 @@ const Dashboard = () => {
         const withdrawUserEmails = await Promise.all(
           withdrawList.map(async (item) => {
             try {
-              console.log(item, "depositidsss")
-              const userRes = await users.get(`/${item.user}`, {
+              const userRes = await users.get(`/${item.userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
+              console.log(userRes)
               return userRes.data?.email || "Email not available"; // Assuming the response has email
             } catch (error) {
               console.error("Error fetching user for withdraw:", error);
