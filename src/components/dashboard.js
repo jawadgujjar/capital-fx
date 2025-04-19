@@ -26,6 +26,9 @@ const Dashboard = () => {
         // Get all users
         const usersRes = await users.get("/", {
           headers: { Authorization: `Bearer ${token}` },
+          params: {
+            limit: '3000'
+          }
         });
 
         const usersList = usersRes.data?.results || [];
