@@ -7,7 +7,7 @@ import {
 } from "@ant-design/icons";
 import { Fade } from "react-awesome-reveal";
 import "./dashboard.css";
-import { users, deposit, withdraw } from "../utils/axios"; // Keep existing imports
+import { users, deposit, withdraw, account } from "../utils/axios"; // ✅ Add 'account'
 
 const Dashboard = () => {
   const [totalUsers, setTotalUsers] = useState(0);
@@ -15,8 +15,11 @@ const Dashboard = () => {
   const [totalWithdrawCount, setTotalWithdrawCount] = useState(0);
   const [depositRequests, setDepositRequests] = useState([]);
   const [withdrawRequests, setWithdrawRequests] = useState([]);
+  const [accountRequests, setAccountRequests] = useState([]); // ✅ new state
+
   const [isDepositModalVisible, setDepositModalVisible] = useState(false);
   const [isWithdrawModalVisible, setWithdrawModalVisible] = useState(false);
+  const [isAccountModalVisible, setAccountModalVisible] = useState(false); // ✅ new modal visibility
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -26,9 +29,7 @@ const Dashboard = () => {
         // Get all users
         const usersRes = await users.get("/", {
           headers: { Authorization: `Bearer ${token}` },
-          params: {
-            limit: '3000'
-          }
+          params: { limit: "3000" },
         });
 
         const usersList = usersRes.data?.results || [];
@@ -42,14 +43,13 @@ const Dashboard = () => {
         const depositList = depositRes.data || [];
         setTotalDepositCount(depositList.length);
 
-        // Fetch emails for deposit users by userId
         const depositUserEmails = await Promise.all(
           depositList.map(async (item) => {
             try {
               const userRes = await users.get(`/${item.user}`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
-              return userRes.data?.email || "Email not available"; // Assuming the response has email
+              return userRes.data?.email || "Email not available";
             } catch (error) {
               console.error("Error fetching user for deposit:", error);
               return "Error fetching email";
@@ -65,15 +65,13 @@ const Dashboard = () => {
         const withdrawList = withdrawRes.data || [];
         setTotalWithdrawCount(withdrawList.length);
 
-        // Fetch emails for withdraw users by userId
         const withdrawUserEmails = await Promise.all(
           withdrawList.map(async (item) => {
             try {
               const userRes = await users.get(`/${item.userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
-              console.log(userRes)
-              return userRes.data?.email || "Email not available"; // Assuming the response has email
+              return userRes.data?.email || "Email not available";
             } catch (error) {
               console.error("Error fetching user for withdraw:", error);
               return "Error fetching email";
@@ -81,6 +79,27 @@ const Dashboard = () => {
           })
         );
         setWithdrawRequests(withdrawUserEmails);
+
+        // ✅ Get account requests and user emails
+        const accountRes = await account.get("/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const accountList = accountRes.data || [];
+
+        const accountUserEmails = await Promise.all(
+          accountList.map(async (item) => {
+            try {
+              const userRes = await users.get(`/${item.userId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              return userRes.data?.email || "Email not available";
+            } catch (error) {
+              console.error("Error fetching user for account:", error);
+              return "Error fetching email";
+            }
+          })
+        );
+        setAccountRequests(accountUserEmails);
 
         // Store in localStorage (optional)
         localStorage.setItem("totalUsers", filteredUsers.length);
@@ -106,14 +125,21 @@ const Dashboard = () => {
       number: totalDepositCount,
       icon: <BankOutlined />,
       color: "transparent",
-      onClick: () => setDepositModalVisible(true), // Open deposit modal
+      onClick: () => setDepositModalVisible(true),
     },
     {
       title: "Withdraw Requests",
       number: totalWithdrawCount,
       icon: <ArrowUpOutlined />,
       color: "transparent",
-      onClick: () => setWithdrawModalVisible(true), // Open withdraw modal
+      onClick: () => setWithdrawModalVisible(true),
+    },
+    {
+      title: "Account Requests", // ✅ New card
+      number: accountRequests.length,
+      icon: <BankOutlined />,
+      color: "transparent",
+      onClick: () => setAccountModalVisible(true),
     },
   ];
 
@@ -137,7 +163,7 @@ const Dashboard = () => {
                   color: "#fff",
                 }}
                 bodyStyle={{ padding: "20px", textAlign: "center" }}
-                onClick={item.onClick} // Trigger onClick when clicking the card
+                onClick={item.onClick}
               >
                 <div className="dashboard-card-icon">{item.icon}</div>
                 <h3 className="dashboard-card-title">{item.title}</h3>
@@ -165,9 +191,7 @@ const Dashboard = () => {
         <h3>Deposit requests from:</h3>
         <ul>
           {depositRequests.length > 0 ? (
-            depositRequests.map((email, index) => (
-              <li key={index}>{email}</li>
-            ))
+            depositRequests.map((email, index) => <li key={index}>{email}</li>)
           ) : (
             <p>No deposit requests available</p>
           )}
@@ -189,6 +213,25 @@ const Dashboard = () => {
             ))
           ) : (
             <p>No withdraw requests available</p>
+          )}
+        </ul>
+      </Modal>
+
+      {/* ✅ Account Modal */}
+      <Modal
+        title="Account Requests"
+        visible={isAccountModalVisible}
+        onCancel={() => setAccountModalVisible(false)}
+        footer={null}
+      >
+        <h3>Account requests from:</h3>
+        <ul>
+          {accountRequests.length > 0 ? (
+            accountRequests.map((email, index) => (
+              <li key={index}>{email}</li>
+            ))
+          ) : (
+            <p>No account requests available</p>
           )}
         </ul>
       </Modal>
