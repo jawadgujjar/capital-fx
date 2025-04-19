@@ -29,7 +29,7 @@ import "./user.css";
 
 const User = () => {
   const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]); // New state for filtered data
+  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isKycModalVisible, setIsKycModalVisible] = useState(false);
@@ -41,7 +41,12 @@ const User = () => {
   const [allAccountRequests, setAllAccountRequests] = useState([]);
   const [accountRequestsLoading, setAccountRequestsLoading] = useState(false);
   const [emailForm] = Form.useForm();
-  const [searchText, setSearchText] = useState(""); // State for search text
+  const [searchText, setSearchText] = useState("");
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 3000,
+    total: 0,
+  });
 
   // Filter data based on search text
   useEffect(() => {
@@ -55,63 +60,81 @@ const User = () => {
     }
   }, [searchText, data]);
 
-  // Fetch all users data and account requests
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
+  // Fetch all users data and account requests with pagination
+  const fetchData = async (page = 1, pageSize = "all") => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
 
-        if (!token) {
-          message.error("No authentication token found");
-          return;
-        }
-
-        const [usersResponse, accountsResponse] = await Promise.all([
-          users.get("/", { headers: { Authorization: `Bearer ${token}` } }),
-          account.get("/", { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-
-        setAllAccountRequests(accountsResponse.data || []);
-
-        const regularUsers = await Promise.all(
-          usersResponse.data.results
-            .filter((user) => user.role === "user")
-            .map(async (user) => {
-              try {
-                const kycResponse = await kyc.get(`/${user.id}`, {
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                return {
-                  ...user,
-                  id: user.id,
-                  userName: user.name || "User",
-                  email: user.email || "No email",
-                  kyc: kycResponse.data || null,
-                };
-              } catch (error) {
-                return {
-                  ...user,
-                  id: user.id,
-                  userName: user.name || "User",
-                  email: user.email || "No email",
-                  kyc: null,
-                };
-              }
-            })
-        );
-
-        setData(regularUsers);
-        setFilteredData(regularUsers); // Initialize filteredData with all data
-      } catch (error) {
-        message.error("Failed to load data");
-      } finally {
-        setLoading(false);
+      if (!token) {
+        message.error("No authentication token found");
+        return;
       }
-    };
 
-    fetchData();
+      const [usersResponse, accountsResponse] = await Promise.all([
+        users.get("/", {
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            page,
+            limit: pageSize
+          }
+        }),
+        account.get("/", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      setAllAccountRequests(accountsResponse.data || []);
+
+      const regularUsers = await Promise.all(
+        usersResponse.data.results
+          .filter((user) => user.role === "user")
+          .map(async (user) => {
+            try {
+              const kycResponse = await kyc.get(`/${user.id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              return {
+                ...user,
+                id: user.id,
+                userName: user.name || "User",
+                email: user.email || "No email",
+                kyc: kycResponse.data || null,
+              };
+            } catch (error) {
+              return {
+                ...user,
+                id: user.id,
+                userName: user.name || "User",
+                email: user.email || "No email",
+                kyc: null,
+              };
+            }
+          })
+      );
+
+      setData(regularUsers);
+      setFilteredData(regularUsers);
+      setPagination({
+        ...pagination,
+        current: page,
+        pageSize,
+        total: usersResponse.data.total || 0,
+      });
+    } catch (error) {
+      message.error("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData(pagination.current, pagination.pageSize);
   }, []);
+
+  // Handle table pagination change
+  const handleTableChange = (pagination) => {
+    fetchData(pagination.current, pagination.pageSize);
+    setPagination(pagination);
+  };
 
   // Email functionality
   const handleSendEmail = (record) => {
@@ -184,7 +207,6 @@ const User = () => {
     }
   };
 
-
   // Account Request Actions
   const handleAccountRequest = (userId) => {
     setSelectedUserId(userId);
@@ -245,6 +267,7 @@ const User = () => {
     setIsTransactionsModalVisible(true);
     message.info(`Showing transactions for user ID: ${userId}`);
   };
+
   const handleDeleteKyc = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -252,20 +275,15 @@ const User = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Remove user from data list
       setData(data.filter(user => user.id !== selectedUserId));
-
-      // Clear selected KYC
       setSelectedUserKyc(null);
-
-      // ✅ This will now show properly
       message.success("KYC deleted successfully");
-      // 🔄 Optionally force reload if needed
       window.location.reload();
     } catch (error) {
       message.error("Failed to delete KYC");
     }
   };
+
   const handleAccountDelete = async (record) => {
     try {
       const token = localStorage.getItem("token");
@@ -274,15 +292,15 @@ const User = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Remove user from data list
       setData(data.filter(user => user.id !== record));
       message.success("User account deleted successfully");
-      window.location.reload(); // Optional reload
+      window.location.reload();
     } catch (error) {
       console.error("Account delete error:", error);
       message.error("Failed to delete user account");
     }
   };
+
   // Table columns
   const columns = [
     {
@@ -365,10 +383,18 @@ const User = () => {
       >
         <Table
           columns={columns}
-          dataSource={filteredData} // Use filteredData instead of data
+          dataSource={filteredData}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50', '100'],
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`
+          }}
+          onChange={handleTableChange}
         />
       </Card>
 
@@ -442,7 +468,6 @@ const User = () => {
               </>
             )}
 
-            {/* 🟠 Delete button always visible */}
             <Button
               type="text"
               danger
@@ -452,7 +477,6 @@ const User = () => {
             >
               Delete KYC
             </Button>
-
           </div>
         ) : (
           <p>No KYC data available for this user</p>
