@@ -8,6 +8,7 @@ import {
 import { Fade } from "react-awesome-reveal";
 import "./dashboard.css";
 import { users, deposit, withdraw, account } from "../utils/axios"; // ✅ Add 'account'
+import { toast } from "react-toastify";
 
 const Dashboard = () => {
   const [totalUsers, setTotalUsers] = useState(0);
@@ -148,12 +149,15 @@ const Dashboard = () => {
       await account.delete(`/delete-all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      toast.success("Account Requests cleared successfully");
 
-      // fetchDashboardData();
+      // Reload the page after successful API call
+      window.location.reload();  // This will reload the page
     } catch (error) {
       console.error("Failed to clear all accounts:", error);
     }
   };
+
   return (
     <div className="dashboard-container">
       <Row
