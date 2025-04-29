@@ -145,7 +145,7 @@ const Dashboard = () => {
   const clearAllAccounts = async () => {
     const token = localStorage.getItem("token");
     try {
-      await account.delete(`/`, {
+      await account.delete(`/delete-all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
