@@ -84,8 +84,8 @@ const Dashboard = () => {
         const accountRes = await account.get("/", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const accountList = accountRes.data || [];
-
+        let accountList = accountRes.data || [];
+        // accountList = accountList.filter(account => account.accountType === "real");
         const accountUserEmails = await Promise.all(
           accountList.map(async (item) => {
             try {
@@ -142,7 +142,18 @@ const Dashboard = () => {
       onClick: () => setAccountModalVisible(true),
     },
   ];
+  const clearAllAccounts = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      await account.delete(`/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
+      // fetchDashboardData();
+    } catch (error) {
+      console.error("Failed to clear all accounts:", error);
+    }
+  };
   return (
     <div className="dashboard-container">
       <Row
@@ -222,9 +233,26 @@ const Dashboard = () => {
         title="Account Requests"
         visible={isAccountModalVisible}
         onCancel={() => setAccountModalVisible(false)}
-        footer={null}
+        footer={null} // <-- Ye hata kar neeche custom footer banaenge
       >
-        <h3>Account requests from:</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3>Account requests from:</h3>
+          {/* Clear Button */}
+          <button
+            onClick={clearAllAccounts}
+            style={{
+              backgroundColor: "red",
+              color: "white",
+              border: "none",
+              padding: "5px 10px",
+              borderRadius: "5px",
+              cursor: "pointer",
+            }}
+          >
+            Clear All
+          </button>
+        </div>
+
         <ul>
           {accountRequests.length > 0 ? (
             accountRequests.map((email, index) => (
@@ -235,6 +263,7 @@ const Dashboard = () => {
           )}
         </ul>
       </Modal>
+
     </div>
   );
 };
