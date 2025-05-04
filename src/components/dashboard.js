@@ -4,10 +4,11 @@ import {
   UserAddOutlined,
   BankOutlined,
   ArrowUpOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import { Fade } from "react-awesome-reveal";
 import "./dashboard.css";
-import { users, deposit, withdraw, account } from "../utils/axios"; // ✅ Add 'account'
+import { users, deposit, withdraw, account } from "../utils/axios";
 import { toast } from "react-toastify";
 
 const Dashboard = () => {
@@ -16,11 +17,11 @@ const Dashboard = () => {
   const [totalWithdrawCount, setTotalWithdrawCount] = useState(0);
   const [depositRequests, setDepositRequests] = useState([]);
   const [withdrawRequests, setWithdrawRequests] = useState([]);
-  const [accountRequests, setAccountRequests] = useState([]); // ✅ new state
+  const [accountRequests, setAccountRequests] = useState([]);
 
   const [isDepositModalVisible, setDepositModalVisible] = useState(false);
   const [isWithdrawModalVisible, setWithdrawModalVisible] = useState(false);
-  const [isAccountModalVisible, setAccountModalVisible] = useState(false); // ✅ new modal visibility
+  const [isAccountModalVisible, setAccountModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -81,26 +82,37 @@ const Dashboard = () => {
         );
         setWithdrawRequests(withdrawUserEmails);
 
-        // ✅ Get account requests and user emails
+        // Get account requests with status
         const accountRes = await account.get("/", {
           headers: { Authorization: `Bearer ${token}` },
         });
         let accountList = accountRes.data || [];
-        // accountList = accountList.filter(account => account.accountType === "real");
-        const accountUserEmails = await Promise.all(
+
+        // Filter accounts with pending status
+        accountList = accountList.filter(account => account.accCreated === "pending");
+
+        const accountRequestsWithStatus = await Promise.all(
           accountList.map(async (item) => {
             try {
               const userRes = await users.get(`/${item.userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
-              return userRes.data?.email || "Email not available";
+              return {
+                id: item.id,
+                email: userRes.data?.email || "Email not available",
+                status: item.accCreated
+              };
             } catch (error) {
               console.error("Error fetching user for account:", error);
-              return "Error fetching email";
+              return {
+                id: null,
+                email: "Error fetching email",
+                status: "pending"
+              };
             }
           })
         );
-        setAccountRequests(accountUserEmails);
+        setAccountRequests(accountRequestsWithStatus);
 
         // Store in localStorage (optional)
         localStorage.setItem("totalUsers", filteredUsers.length);
@@ -113,6 +125,25 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  const handleApproveAccount = async (accountId) => {
+    const token = localStorage.getItem("token");
+    try {
+      await account.patch(`/${accountId}`, {
+        accCreated: "done"
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast.success("Account approved successfully");
+
+      // Update the local state to remove the approved account
+      setAccountRequests(prev => prev.filter(account => account.id !== accountId));
+    } catch (error) {
+      console.error("Failed to approve account:", error);
+      toast.error("Failed to approve account");
+    }
+  };
 
   const data = [
     {
@@ -136,27 +167,13 @@ const Dashboard = () => {
       onClick: () => setWithdrawModalVisible(true),
     },
     {
-      title: "Account Requests", // ✅ New card
+      title: "Account Requests",
       number: accountRequests.length,
       icon: <BankOutlined />,
       color: "transparent",
       onClick: () => setAccountModalVisible(true),
     },
   ];
-  const clearAllAccounts = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      await account.delete(`/delete-all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success("Account Requests cleared successfully");
-
-      // Reload the page after successful API call
-      window.location.reload();  // This will reload the page
-    } catch (error) {
-      console.error("Failed to clear all accounts:", error);
-    }
-  };
 
   return (
     <div className="dashboard-container">
@@ -232,42 +249,48 @@ const Dashboard = () => {
         </ul>
       </Modal>
 
-      {/* ✅ Account Modal */}
+      {/* Account Modal */}
       <Modal
         title="Account Requests"
         visible={isAccountModalVisible}
         onCancel={() => setAccountModalVisible(false)}
-        footer={null} // <-- Ye hata kar neeche custom footer banaenge
+        footer={null}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3>Account requests from:</h3>
-          {/* Clear Button */}
-          <button
-            onClick={clearAllAccounts}
-            style={{
-              backgroundColor: "red",
-              color: "white",
-              border: "none",
-              padding: "5px 10px",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Clear All
-          </button>
-        </div>
-
-        <ul>
+        <h3>Pending Account requests:</h3>
+        <ul style={{ listStyle: "none", padding: 0 }}>
           {accountRequests.length > 0 ? (
-            accountRequests.map((email, index) => (
-              <li key={index}>{email}</li>
+            accountRequests.map((request, index) => (
+              <li
+                key={index}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "8px 0",
+                  borderBottom: "1px solid #f0f0f0"
+                }}
+              >
+                <span>{request.email}</span>
+                <button
+                  onClick={() => handleApproveAccount(request.id)}
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#52c41a",
+                    fontSize: "16px"
+                  }}
+                  title="Approve Account"
+                >
+                  <CheckOutlined />
+                </button>
+              </li>
             ))
           ) : (
-            <p>No account requests available</p>
+            <p>No pending account requests available</p>
           )}
         </ul>
       </Modal>
-
     </div>
   );
 };
