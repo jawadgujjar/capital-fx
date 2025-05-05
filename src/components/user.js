@@ -11,7 +11,9 @@ import {
   Spin,
   message,
   Form,
-  Input
+  Input,
+  InputNumber,
+  Select
 } from "antd";
 import {
   UserOutlined,
@@ -21,11 +23,14 @@ import {
   CloseOutlined,
   MailOutlined,
   DeleteOutlined,
-  SearchOutlined
+  SearchOutlined,
+  PlusOutlined
 } from "@ant-design/icons";
 import { users, kyc, account } from "../utils/axios";
 import Transactions from "./transactions";
 import "./user.css";
+
+const { Option } = Select;
 
 const User = () => {
   const [data, setData] = useState([]);
@@ -36,11 +41,13 @@ const User = () => {
   const [isAccountModalVisible, setIsAccountModalVisible] = useState(false);
   const [isTransactionsModalVisible, setIsTransactionsModalVisible] = useState(false);
   const [isEmailModalVisible, setIsEmailModalVisible] = useState(false);
+  const [isCreateAccountModalVisible, setIsCreateAccountModalVisible] = useState(false);
   const [selectedUserKyc, setSelectedUserKyc] = useState(null);
   const [accountRequests, setAccountRequests] = useState([]);
   const [allAccountRequests, setAllAccountRequests] = useState([]);
   const [accountRequestsLoading, setAccountRequestsLoading] = useState(false);
   const [emailForm] = Form.useForm();
+  const [accountForm] = Form.useForm();
   const [searchText, setSearchText] = useState("");
   const [pagination, setPagination] = useState({
     current: 1,
@@ -257,6 +264,46 @@ const User = () => {
       message.success("Account deleted successfully");
     } catch (error) {
       message.error("Failed to delete account");
+      console.error(error);
+    }
+  };
+
+  // Create Real Account Manually
+  const handleCreateRealAccount = () => {
+    accountForm.resetFields();
+    setIsCreateAccountModalVisible(true);
+  };
+
+  const submitCreateAccount = async (values) => {
+    try {
+      const token = localStorage.getItem("token");
+      await account.post(
+        "/",
+        {
+          userId: selectedUserId,
+          accountType: "real",
+          status: "verified",
+          accCreated: "done",
+          ...values
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Refresh account requests
+      const response = await account.get("/", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllAccountRequests(response.data || []);
+
+      const userAccountRequests = response.data.filter(request =>
+        request.userId?.toString() === selectedUserId?.toString()
+      );
+      setAccountRequests(userAccountRequests);
+
+      message.success("Real account created successfully");
+      setIsCreateAccountModalVisible(false);
+    } catch (error) {
+      message.error("Failed to create real account");
       console.error(error);
     }
   };
@@ -488,7 +535,16 @@ const User = () => {
         title={`Account Requests (User ${selectedUserId})`}
         visible={isAccountModalVisible}
         onCancel={() => setIsAccountModalVisible(false)}
-        footer={null}
+        footer={[
+          <Button
+            key="create"
+            type="primary"
+            onClick={handleCreateRealAccount}
+            icon={<PlusOutlined />}
+          >
+            Create Real Account
+          </Button>
+        ]}
         width={1000}
       >
         <Spin spinning={accountRequestsLoading}>
@@ -585,6 +641,77 @@ const User = () => {
         </Spin>
       </Modal>
 
+      {/* Create Account Modal */}
+      <Modal
+        title="Create Real Account"
+        visible={isCreateAccountModalVisible}
+        onCancel={() => setIsCreateAccountModalVisible(false)}
+        onOk={() => accountForm.submit()}
+        okText="Create Account"
+        cancelText="Cancel"
+        width={600}
+      >
+        <Form
+          form={accountForm}
+          layout="vertical"
+          onFinish={submitCreateAccount}
+        >
+          <Form.Item
+            label="Name"
+            name="name"
+            rules={[{ required: true, message: 'Please input name!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[{ required: true, message: 'Please input email!', type: 'email' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Account Type"
+            name="accountType"
+            initialValue="real"
+          >
+            <Select disabled>
+              <Option value="real">Real Account</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="Initial Amount ($)"
+            name="amount"
+            rules={[{ required: true, message: 'Please input amount!' }]}
+          >
+            <InputNumber style={{ width: '100%' }} min={0} />
+          </Form.Item>
+          <Form.Item
+            label="Phone"
+            name="phone"
+            rules={[{ required: true, message: 'Please input phone number!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Country"
+            name="country"
+            rules={[{ required: true, message: 'Please input country!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Status"
+            name="status"
+            initialValue="verified"
+          >
+            <Select disabled>
+              <Option value="verified">Verified</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+
       {/* Transactions Modal */}
       <Modal
         title={`Transactions for User ${selectedUserId}`}
@@ -605,18 +732,6 @@ const User = () => {
         okText="Send Email"
         cancelText="Cancel"
         width={600}
-        footer={[
-          <Button key="cancel" onClick={() => setIsEmailModalVisible(false)}>
-            Cancel
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            onClick={() => emailForm.submit()}
-          >
-            Send Email
-          </Button>
-        ]}
       >
         <Form
           form={emailForm}
