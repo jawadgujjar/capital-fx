@@ -13,7 +13,9 @@ import {
   Form,
   Input,
   InputNumber,
-  Select
+  Select,
+  Row,
+  Col
 } from "antd";
 import {
   UserOutlined,
@@ -24,7 +26,8 @@ import {
   MailOutlined,
   DeleteOutlined,
   SearchOutlined,
-  PlusOutlined
+  PlusOutlined,
+  FilterOutlined
 } from "@ant-design/icons";
 import { users, kyc, account } from "../utils/axios";
 import Transactions from "./transactions";
@@ -49,23 +52,43 @@ const User = () => {
   const [emailForm] = Form.useForm();
   const [accountForm] = Form.useForm();
   const [searchText, setSearchText] = useState("");
+  const [kycFilter, setKycFilter] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 3000,
     total: 0,
   });
 
-  // Filter data based on search text
+  // Filter data based on search text and KYC status
   useEffect(() => {
+    let filtered = [...data];
+
+    // Apply email search filter
     if (searchText) {
-      const filtered = data.filter(user =>
+      filtered = filtered.filter(user =>
         user.email.toLowerCase().includes(searchText.toLowerCase())
       );
-      setFilteredData(filtered);
-    } else {
-      setFilteredData(data);
     }
-  }, [searchText, data]);
+
+    // Apply KYC status filter
+    if (kycFilter) {
+      if (kycFilter === 'pending') {
+        filtered = filtered.filter(user =>
+          user.kyc && user.kyc.status === 'pending'  // Only users with actual pending KYC
+        );
+      } else if (kycFilter === 'not_submitted') {
+        filtered = filtered.filter(user =>
+          !user.kyc  // Only users with no KYC submission
+        );
+      } else {
+        filtered = filtered.filter(user =>
+          user.kyc && user.kyc.status === kycFilter
+        );
+      }
+    }
+
+    setFilteredData(filtered);
+  }, [searchText, kycFilter, data]);
 
   // Fetch all users data and account requests with pagination
   const fetchData = async (page = 1, pageSize = "all") => {
@@ -105,6 +128,7 @@ const User = () => {
                 userName: user.name || "User",
                 email: user.email || "No email",
                 kyc: kycResponse.data || null,
+                kycStatus: kycResponse.data?.status || "not_submitted"
               };
             } catch (error) {
               return {
@@ -113,6 +137,7 @@ const User = () => {
                 userName: user.name || "User",
                 email: user.email || "No email",
                 kyc: null,
+                kycStatus: "not_submitted"
               };
             }
           })
@@ -141,6 +166,12 @@ const User = () => {
   const handleTableChange = (pagination) => {
     fetchData(pagination.current, pagination.pageSize);
     setPagination(pagination);
+  };
+
+  // Reset all filters
+  const handleResetFilters = () => {
+    setSearchText("");
+    setKycFilter(null);
   };
 
   // Email functionality
@@ -418,14 +449,40 @@ const User = () => {
         title="User Management"
         bordered={false}
         extra={
-          <Input
-            placeholder="Search by email"
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 300 }}
-            allowClear
-          />
+          <Row gutter={16} align="middle">
+            <Col>
+              <Input
+                placeholder="Search by email"
+                prefix={<SearchOutlined />}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ width: 200 }}
+                allowClear
+              />
+            </Col>
+            <Col>
+              <Select
+                placeholder="Filter by KYC status"
+                value={kycFilter}
+                onChange={setKycFilter}
+                style={{ width: 200 }}
+                allowClear
+              >
+                <Option value="verified">Verified</Option>
+                <Option value="pending">Pending</Option>
+                <Option value="rejected">Rejected</Option>
+                <Option value="not_submitted">Not Submitted</Option>
+              </Select>
+            </Col>
+            <Col>
+              <Button
+                icon={<FilterOutlined />}
+                onClick={handleResetFilters}
+              >
+                Reset Filters
+              </Button>
+            </Col>
+          </Row>
         }
       >
         <Table
@@ -444,7 +501,6 @@ const User = () => {
           onChange={handleTableChange}
         />
       </Card>
-
       {/* KYC Modal */}
       <Modal
         title="KYC Verification"
