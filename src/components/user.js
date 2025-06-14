@@ -27,7 +27,8 @@ import {
   DeleteOutlined,
   SearchOutlined,
   PlusOutlined,
-  FilterOutlined
+  FilterOutlined,
+  EditOutlined
 } from "@ant-design/icons";
 import { users, kyc, account } from "../utils/axios";
 import Transactions from "./transactions";
@@ -51,8 +52,10 @@ const User = () => {
   const [accountRequestsLoading, setAccountRequestsLoading] = useState(false);
   const [emailForm] = Form.useForm();
   const [accountForm] = Form.useForm();
+  const [kycForm] = Form.useForm();
   const [searchText, setSearchText] = useState("");
   const [kycFilter, setKycFilter] = useState(null);
+  const [isEditingBankDetails, setIsEditingBankDetails] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 3000,
@@ -74,11 +77,11 @@ const User = () => {
     if (kycFilter) {
       if (kycFilter === 'pending') {
         filtered = filtered.filter(user =>
-          user.kyc && user.kyc.status === 'pending'  // Only users with actual pending KYC
+          user.kyc && user.kyc.status === 'pending'
         );
       } else if (kycFilter === 'not_submitted') {
         filtered = filtered.filter(user =>
-          !user.kyc  // Only users with no KYC submission
+          !user.kyc
         );
       } else {
         filtered = filtered.filter(user =>
@@ -218,6 +221,7 @@ const User = () => {
       });
       setSelectedUserKyc(response.data);
       setIsKycModalVisible(true);
+      setIsEditingBankDetails(false);
     } catch (error) {
       message.error("Failed to fetch KYC details");
     }
@@ -242,6 +246,47 @@ const User = () => {
       message.success(`KYC ${newStatus === "verified" ? "verified" : "rejected"} successfully`);
     } catch (error) {
       message.error(`Failed to ${newStatus === "verified" ? "verify" : "reject"} KYC`);
+    }
+  };
+
+  // Update bank details
+  const handleUpdateBankDetails = async (values) => {
+    try {
+      const token = localStorage.getItem("token");
+      await kyc.patch(
+        `/${selectedUserId}`,
+        {
+          bankDetails: {
+            accountHolder: values.accountHolder,
+            accountNumber: values.accountNumber,
+            bankName: values.bankName
+          }
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const updatedKyc = {
+        ...selectedUserKyc,
+        bankDetails: {
+          accountHolder: values.accountHolder,
+          accountNumber: values.accountNumber,
+          bankName: values.bankName
+        }
+      };
+
+      setSelectedUserKyc(updatedKyc);
+      setIsEditingBankDetails(false);
+
+      setData(data.map(user =>
+        user.id === selectedUserId
+          ? { ...user, kyc: updatedKyc }
+          : user
+      ));
+
+      message.success("Bank details updated successfully");
+    } catch (error) {
+      message.error("Failed to update bank details");
+      console.error(error);
     }
   };
 
@@ -320,7 +365,6 @@ const User = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Refresh account requests
       const response = await account.get("/", {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -501,11 +545,15 @@ const User = () => {
           onChange={handleTableChange}
         />
       </Card>
+
       {/* KYC Modal */}
       <Modal
         title="KYC Verification"
         visible={isKycModalVisible}
-        onCancel={() => setIsKycModalVisible(false)}
+        onCancel={() => {
+          setIsKycModalVisible(false);
+          setIsEditingBankDetails(false);
+        }}
         footer={null}
         width={800}
       >
@@ -531,18 +579,77 @@ const User = () => {
             </div>
 
             <div className="kyc-section">
-              <h3>Bank Details</h3>
-              <Descriptions bordered column={1}>
-                <Descriptions.Item label="Account Holder">
-                  {selectedUserKyc.bankDetails?.accountHolder || "N/A"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Account Number">
-                  {selectedUserKyc.bankDetails?.accountNumber || "N/A"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Bank Name">
-                  {selectedUserKyc.bankDetails?.bankName || "N/A"}
-                </Descriptions.Item>
-              </Descriptions>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>Bank Details</h3>
+                {!isEditingBankDetails && selectedUserKyc.bankDetails && (
+                  <Button
+                    type="link"
+                    icon={<EditOutlined />}
+                    onClick={() => {
+                      setIsEditingBankDetails(true);
+                      kycForm.setFieldsValue({
+                        accountHolder: selectedUserKyc.bankDetails?.accountHolder || '',
+                        accountNumber: selectedUserKyc.bankDetails?.accountNumber || '',
+                        bankName: selectedUserKyc.bankDetails?.bankName || ''
+                      });
+                    }}
+                  >
+                    Edit
+                  </Button>
+                )}
+              </div>
+
+              {isEditingBankDetails ? (
+                <Form
+                  form={kycForm}
+                  layout="vertical"
+                  onFinish={handleUpdateBankDetails}
+                >
+                  <Form.Item
+                    label="Account Holder"
+                    name="accountHolder"
+                    rules={[{ required: true, message: 'Please input account holder name!' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item
+                    label="Account Number"
+                    name="accountNumber"
+                    rules={[{ required: true, message: 'Please input account number!' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item
+                    label="Bank Name"
+                    name="bankName"
+                    rules={[{ required: true, message: 'Please input bank name!' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item>
+                    <Space>
+                      <Button type="primary" htmlType="submit">
+                        Save
+                      </Button>
+                      <Button onClick={() => setIsEditingBankDetails(false)}>
+                        Cancel
+                      </Button>
+                    </Space>
+                  </Form.Item>
+                </Form>
+              ) : (
+                <Descriptions bordered column={1}>
+                  <Descriptions.Item label="Account Holder">
+                    {selectedUserKyc.bankDetails?.accountHolder || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Account Number">
+                    {selectedUserKyc.bankDetails?.accountNumber || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Bank Name">
+                    {selectedUserKyc.bankDetails?.bankName || "N/A"}
+                  </Descriptions.Item>
+                </Descriptions>
+              )}
             </div>
 
             {selectedUserKyc.status === "verified" ? (
